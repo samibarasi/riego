@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link href="{{ url('static', filename='vendor/bootstrap.min.css') }}" rel="stylesheet" type="text/css">
+    <link rel="icon" type="image/png" href="{{ url('static', filename='favicon.png') }}">
+	<link href="{{ url('static', filename='navbar-top-fixed.css') }}" rel="stylesheet">
+    {% block head %}
+	<title>{{title}}</title>
+    {% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-md fixed-top navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">Riego</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
+                aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                    <li class="nav-item">
+                        <a id="menu_dashboard" class="nav-link active" href="/dashboard">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a id="menu_setup" class="nav-link" href="/setup">Setup</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {% block content%}
+	<h1>{{title}}</h1>
+    {% endblock %}
+    <script src="{{ url('static', filename='vendor/bootstrap.bundle.min.js') }}"></script>
+</body>
+</html>
+

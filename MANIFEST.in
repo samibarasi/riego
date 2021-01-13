@@ -1,0 +1,5 @@
+include INSTALL.txt
+include README.md
+include riego.conf.example
+recursive-include riego/web/static *
+recursive-include riego/web/templates *

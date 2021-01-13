@@ -1,0 +1,46 @@
+"""
+
+"""
+
+from yoyo import step
+
+__depends__ = {'20201223_01_mDHp6'}
+
+steps = [
+        step(
+        """CREATE TABLE x_valves
+            (id  	    INTEGER PRIMARY KEY AUTOINCREMENT,
+            name	    TEXT UNIQUE,
+            topic	    TEXT UNIQUE,
+            duration	INTEGER DEFAULT 0,
+            interval	INTEGER DEFAULT 0,
+            last_run	timestamp DEFAULT CURRENT_TIMESTAMP,
+            is_running	boolean DEFAULT FALSE,
+            is_enabled	boolean DEFAULT FALSE,
+            remark      TEXT);""",
+        """DROP TABLE x_valves;"""
+        ),
+        step(
+        """INSERT INTO x_valves SELECT * FROM valves;""",
+        """INSERT INTO valves SELECT * FROM x_valves;"""
+        ),
+        step(
+        """DROP TABLE valves;""",
+        """CREATE TABLE valves
+            (id  	    INTEGER PRIMARY KEY AUTOINCREMENT,
+            name	    TEXT UNIQUE,
+            topic	    TEXT UNIQUE,
+            duration	INTEGER DEFAULT 0,
+            interval	INTEGER DEFAULT 0,
+            last_run	timestamp DEFAULT CURRENT_TIMESTAMP,
+            is_running	INTEGER DEFAULT 0,
+            is_enabled	INTEGER DEFAULT 0,
+            remark      TEXT);"""
+        ),
+        step(
+        """ALTER TABLE x_valves RENAME TO valves;""",
+        """ALTER TABLE valves RENAME TO x_valves;"""
+        )
+        
+        
+]
