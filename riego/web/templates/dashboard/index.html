@@ -54,18 +54,18 @@
 </main>
 
 <script>
-	var wsUri = (window.location.protocol == 'https:' && 'wss://' || 'ws://') + window.location.host + "/dashboard/ws";
+	var wsUri = (window.location.protocol == 'https:' && 'wss://' || 'ws://') + window.location.host + "/ws";
 	ws = new WebSocket(wsUri);
 
 	ws.onmessage = function (event) {
-		data = JSON.parse(event.data);
-
 		el = document.getElementById('floating_1_Textarea2');
-		el.value = 'action: ' + data.action + ', value: ' + data.value + ', id: ' + data.dom_id;
-
+		el.value = event.data;
+				
+		data = JSON.parse(event.data);
 		switch (data.action) {
 			case 'status':
-				el = document.getElementById(data.dom_id)
+				dom_id = "valves_" + data.id + "_" + data.prop
+				el = document.getElementById(dom_id)
 				if (el.hasAttribute('value')) {
 					el.value = data.value;
 				}

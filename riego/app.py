@@ -3,7 +3,6 @@ import configargparse
 import pkg_resources
 import os
 import pathlib
-import weakref
 # import logging
 # import sys
 
@@ -16,6 +15,7 @@ import riego.timer
 
 from riego.web.routes import setup_routes
 from riego.web.middlewares import setup_middlewares
+from riego.web.websockets import setup_websockets
 
 from aiohttp import web
 import jinja2
@@ -25,33 +25,35 @@ import aiohttp_debugtoolbar
 from riego.__init__ import __version__
 
 
-async def start_background_tasks(app):
+async def on_startup(app):
     app['background_timer'] = asyncio.create_task(app['timer'].start_async())
     app['background_mqtt'] = asyncio.create_task(app['mqtt'].start_async())
 
 
-async def cleanup_background_tasks(app):
+async def on_cleanup(app):
     app['background_timer'].cancel()
     await app['background_timer']
     app['background_mqtt'].cancel()
     await app['background_mqtt']
 
 
-async def shutdown_websockets(app):
-    for ws in app["dashboard_ws"]:
-        await ws.close()
+async def on_shutdown(app):
+    pass
 
-
-# os.path.join(os.path.dirname(__file__), "websocket.html")
 
 def main():
     p = configargparse.ArgParser(
         default_config_files=['/etc/riego/conf.d/*.conf', '~/.riego.conf'])
     p.add('-c', '--config', is_config_file=True, env_var='RIEGO_CONF',
           default='riego.conf', help='config file path')
-    p.add('-d', '--database', help='path to DB file', default='db/riego.db')
+    p.add('-d', '--database', help='path to DB file',
+          default='db/riego.db')
     p.add('-e', '--event_log', help='path to event logfile',
           default='log/event.log')
+    p.add('--event_log_max_bytes', help='Maximum Evet Log Size in bytes',
+          default=1024*300, type=int)
+    p.add('--event_log_backup_count', help='How many files to rotate',
+          default=3, type=int)
     p.add('-m', '--mqtt_host', help='IP adress of mqtt host', required=True)
     p.add('-p', '--mqtt_port', help='Port of mqtt service', required=True,
           type=int)
@@ -93,7 +95,6 @@ def main():
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
     app = web.Application()
-    app['dashboard_ws'] = weakref.WeakSet()
 
     app['options'] = options
     app['log'] = riego.logger.create_log(options)
@@ -104,15 +105,16 @@ def main():
     app['parameter'] = riego.parameter.Parameter(app)
     app['timer'] = riego.timer.Timer(app)
 
-    app.on_startup.append(start_background_tasks)
-    app.on_cleanup.append(cleanup_background_tasks)
-    app.on_shutdown.append(shutdown_websockets)
+    app.on_startup.append(on_startup)
+    app.on_cleanup.append(on_cleanup)
+    app.on_shutdown.append(on_shutdown)
 
     aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(
         options.http_server_template_dir))
 
     setup_routes(app)
     setup_middlewares(app)
+    setup_websockets(app)
 
     if options.enable_aiohttp_debug_toolbar:
         aiohttp_debugtoolbar.setup(app, check_host=False)

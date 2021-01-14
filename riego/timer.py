@@ -20,7 +20,7 @@ class Timer():
 
                     if datetime.now() - v.last_run > td:
                         # Laufzeit erreicht
-                        await v.set_is_running(0, 'auto')
+                        await v.set_is_running(0)
                         self.__log.debug("valveOff " + v.name)
                     else:
                         pass
@@ -33,7 +33,7 @@ class Timer():
                             datetime.now().strftime('%H:%M') >=
                             self.__parameter.get('startTime')):
                         # Intervall erreicht
-                        await v.set_is_running(1, 'auto')
+                        await v.set_is_running(1)
                         self.__log.debug("valveOn " + v.name)
                     else:
                         v = self.__valves.get_next()
@@ -42,4 +42,4 @@ class Timer():
             except asyncio.CancelledError:
                 self.__log.debug("Timer: trapped cancel")
                 break
-        await v.set_is_running(0, 'auto')
+        await v.set_is_running(0)

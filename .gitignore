@@ -3,7 +3,8 @@
 log/*
 db/*
 
-
+/PRIVATE.txt
+/make.bat
 
 
 # Setuptools distribution folder.

@@ -25,7 +25,8 @@ def create_event_log(options):
         "%(asctime)s %(message)s", "%Y-%m-%d %H:%M:%S")
 
     file_handler = RotatingFileHandler(options.event_log, mode='a',
-                                       maxBytes=1024, backupCount=2,
+                                       maxBytes=options.event_log_max_bytes,
+                                       backupCount=options.event_log_backup_count,  # noqa: E501
                                        encoding=None, delay=0)
 
 #    file_handler = logging.FileHandler(options.event_log)
