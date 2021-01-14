@@ -46,9 +46,9 @@ def main():
         default_config_files=['/etc/riego/conf.d/*.conf', '~/.riego.conf'])
     p.add('-c', '--config', is_config_file=True, env_var='RIEGO_CONF',
           default='riego.conf', help='config file path')
-    p.add('-d', '--database', help='path to DB file',
+    p.add('-d', '--database', help='Path and name for DB file',
           default='db/riego.db')
-    p.add('-e', '--event_log', help='path to event logfile',
+    p.add('-e', '--event_log', help='Full path and name for event logfile',
           default='log/event.log')
     p.add('--event_log_max_bytes', help='Maximum Evet Log Size in bytes',
           default=1024*300, type=int)
@@ -63,7 +63,7 @@ def main():
     p.add('--base_dir', help='Change only if you know what you are doing',
           default=pathlib.Path(__file__).parent)
     p.add('--http_server_bind_address',
-          help='http-server bind address', default='localhost')
+          help='http-server bind address', default='0.0.0.0')
     p.add('--http_server_bind_port', help='http-server bind port',
           default=8080, type=int)
     p.add('--http_server_static_dir',

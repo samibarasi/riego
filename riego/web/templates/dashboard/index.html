@@ -1,57 +1,54 @@
 {% extends "base.html" %}
 
-{% set title = "Main" %}
-{% set active = "dashboard" %}
+{% set title = "Riego - Dashboard" %}
+{% set active_menu = "dashboard" %}
 
 {% block content %}
 
-<main class="container">
+{%for valve in valves %}
 
-	<div class="form-floating">
-		<textarea class="form-control" placeholder="Leave a comment here" autocomplete="off" id="floating_1_Textarea2"
-			style="height: 100px"></textarea>
-		<label for="floatingTextarea2">Comments</label>
-	</div>
-
-
-	{%for valve in valves %}
-
+<div class="bg-light p-3 rounded">
 	<h3>{{valves[valve].name}}</h3>
-	<div>
-		<label for="valves_{{valve}}_duration" class="form-label">Dauer: {{valves[valve].duration}} Minuten</label>
-		<input type="range" class="form-range" min="0" max="90" id="valves_{{valve}}_duration" autocomplete="off"
-			value="{{valves[valve].duration}}"
-			onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'duration', value: this.value } ));"
-			oninput="this.previousElementSibling.innerHTML = 'Dauer: ' + this.value + ' Minuten';">
+	<label for="valves_{{valve}}_duration" class="form-label">Dauer: {{valves[valve].duration}} Minuten</label>
+	<input type="range" class="form-range" min="0" max="90" id="valves_{{valve}}_duration" autocomplete="off"
+		value="{{valves[valve].duration}}"
+		onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'duration', value: this.value } ));"
+		oninput="this.previousElementSibling.innerHTML = 'Dauer: ' + this.value + ' Minuten';">
 
-		<label for="valves_{{valve}}_interval" class="form-label">Intervall: {{valves[valve].interval}} Tage</label>
-		<input type="range" class="form-range" min="0" max="10" id="valves_{{valve}}_interval" autocomplete="off"
-			value="{{valves[valve].interval}}"
-			onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'interval', value: this.value } ));"
-			oninput="this.previousElementSibling.innerHTML = 'Intervall: ' + this.value + ' Tage';">
+	<label for="valves_{{valve}}_interval" class="form-label">Intervall: {{valves[valve].interval}} Tage</label>
+	<input type="range" class="form-range" min="0" max="10" id="valves_{{valve}}_interval" autocomplete="off"
+		value="{{valves[valve].interval}}"
+		onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'interval', value: this.value } ));"
+		oninput="this.previousElementSibling.innerHTML = 'Intervall: ' + this.value + ' Tage';">
 
 
-		<div class="row g-3">
-			<div class="col form-check form-switch">
-				<input class="form-check-input" type="checkbox" id="valves_{{valve}}_is_running" autocomplete="off" {%
-					if valves[valve].is_running==1 %} checked {% endif %}
-					onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'is_running', value: this.checked } ))">
-				<label class="form-check-label" for="valves_{{valve}}_is_running">Offen</label>
-			</div>
-
-			<div class="col form-check">
-				<input class="form-check-input" type="checkbox" value="" id="valves_{{valve}}_is_enabled"
-					autocomplete="off" {% if valves[valve].is_enabled==1 %} checked {% endif %}
-					onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'is_enabled', value: this.checked } ))">
-				<label class="form-check-label" for="valves_{{valve}}_is_enabled">Aktiviert</label>
-			</div>
+	<div class="row g-3">
+		<div class="col form-check form-switch">
+			<input class="form-check-input" type="checkbox" id="valves_{{valve}}_is_running" autocomplete="off" {% if
+				valves[valve].is_running==1 %} checked {% endif %}
+				onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'is_running', value: this.checked } ))">
+			<label class="form-check-label" for="valves_{{valve}}_is_running">Offen</label>
 		</div>
-		{{valves[valve].last_run}}
 
+		<div class="col form-check">
+			<input class="form-check-input" type="checkbox" value="" id="valves_{{valve}}_is_enabled" autocomplete="off"
+				{% if valves[valve].is_enabled==1 %} checked {% endif %}
+				onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'is_enabled', value: this.checked } ))">
+			<label class="form-check-label" for="valves_{{valve}}_is_enabled">Aktiviert</label>
+		</div>
 	</div>
+	{{valves[valve].last_run}}
+</div>
+<p>&nbsp;</p>
 
-	{%endfor%}
-</main>
+{%endfor%}
+
+
+<div class="form-floating">
+	<textarea class="form-control" placeholder="Leave a comment here" autocomplete="off" id="floating_1_Textarea2"
+		style="height: 100px"></textarea>
+	<label for="floatingTextarea2">Comments</label>
+</div>
 
 <script>
 	var wsUri = (window.location.protocol == 'https:' && 'wss://' || 'ws://') + window.location.host + "/ws";
@@ -60,7 +57,7 @@
 	ws.onmessage = function (event) {
 		el = document.getElementById('floating_1_Textarea2');
 		el.value = event.data;
-				
+
 		data = JSON.parse(event.data);
 		switch (data.action) {
 			case 'status':

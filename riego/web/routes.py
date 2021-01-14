@@ -1,13 +1,16 @@
-from riego.web.main.views import main_index, exception_handler, main_system
-from riego.web.dashboard.views import dashboard_index, dashboard_ws
+from riego.web.dashboard.views import dashboard_index
+from riego.web.system.views import system_index, system_check_update, system_do_update, system_restart, system_setup, system_event_log, system_exc
 
 
 routes = [
-    ('GET', '/',                main_index,         'main_index'),
-    ('GET', '/system',          main_system,        'main_system'),
-    ('GET', '/dashboard',       dashboard_index,    'dashboard_index'),
-    ('GET', '/dashboard/ws',    dashboard_ws,       'dashboard_ws'),
-    ('GET', '/exc',             exception_handler,  'exc_example'),
+    ('GET', '/',                    dashboard_index,      'dashboard_index'),
+    ('GET', '/system',              system_index,         'system_index'),
+    ('GET', '/system/check_update', system_check_update,  'system_check_update'),
+    ('GET', '/system/do_update',    system_do_update,     'system_do_update'),
+    ('GET', '/system/restart',      system_restart,       'system_restart'),
+    ('GET', '/system/setup',        system_setup,         'system_setup'),
+    ('GET', '/system/event_log',    system_event_log,     'system_event_log'),
+    ('GET', '/exc',                 system_exc,           'system_exc'),
 ]
 
 
