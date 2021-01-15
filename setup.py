@@ -16,7 +16,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
     install_requires=[
-        'paho-mqtt',
+        'gmqtt',
         'ConfigArgParse',
         'yoyo-migrations',
         'aiohttp',

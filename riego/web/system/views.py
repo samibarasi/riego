@@ -1,5 +1,4 @@
 import aiohttp_jinja2
-from aiohttp.web_runner import GracefulExit
 from aiohttp import web
 
 
@@ -15,8 +14,8 @@ from pkg_resources import packaging
 async def system_index(request):
     text = ''
     installed_version = await _check_installed()
-    if not packaging.version.parse(installed_version) == packaging.version.parse(__version__):
-        text = 'Diese Riego Instanz läuft in der Version {} und entspricht nicht der installierten Version {}.'
+    if not packaging.version.parse(installed_version) == packaging.version.parse(__version__):  # noqa: E501
+        text = 'Diese Riego Instanz läuft in der Version {} und entspricht nicht der installierten Version {}.'  # noqa: E501
         text = text.format(__version__, installed_version)
 
     #    return web.Response(text="Hello, world")
@@ -37,7 +36,7 @@ async def system_do_update(request):
 
 @aiohttp_jinja2.template('system/index.html')
 async def system_restart(request):
-    raise GracefulExit()
+    exit(0)
 
 
 @aiohttp_jinja2.template('system/index.html')

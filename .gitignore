@@ -4,9 +4,9 @@ log/*
 db/*
 
 /PRIVATE.txt
-/make.bat
 /requirements_dev.txt
 /tt.py
+/upload.bat
 
 
 # Setuptools distribution folder.

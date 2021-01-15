@@ -130,4 +130,3 @@ def main():
     web.run_app(app,
                 host=options.http_server_bind_address,
                 port=options.http_server_bind_port)
-    print("Exit")

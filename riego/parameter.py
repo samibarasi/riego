@@ -11,7 +11,7 @@ class Parameter:
                   (key,))
         ret = c.fetchone()
         c.close()
-        if ret != None:
+        if ret is not None:
             ret = (ret['value'])
         return ret
 
