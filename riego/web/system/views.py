@@ -7,11 +7,20 @@ import asyncio
 import sys
 import json
 
+from riego.__init__ import __version__
+from pkg_resources import packaging
+
 
 @aiohttp_jinja2.template('system/index.html')
 async def system_index(request):
+    text = ''
+    installed_version = await _check_installed()
+    if not packaging.version.parse(installed_version) == packaging.version.parse(__version__):
+        text = 'Diese Riego Instanz läuft in der Version {} und entspricht nicht der installierten Version {}.'
+        text = text.format(__version__, installed_version)
+
     #    return web.Response(text="Hello, world")
-    return {'text': 'Hello, world2'}
+    return {'text': text}
 
 
 @aiohttp_jinja2.template('system/index.html')
@@ -45,10 +54,30 @@ async def system_exc(request):
     raise NotImplementedError
 
 
+async def _check_installed(version=None):
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable, '-m', 'pip', 'list', "--format=json",
+        "--disable-pip-version-check",
+        "--no-color",
+        "--no-python-version-warning",
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE)
+
+    stdout, stderr = await proc.communicate()
+    data = json.loads(stdout)
+    for item in data:
+        if item['name'] == 'riego':
+            version = item['version']
+            break
+    return version
+
+
 async def _check_update(latest_version=None):
     proc = await asyncio.create_subprocess_exec(
         sys.executable, '-m', 'pip', 'list', "-o", "--format=json",
-        "--disable-pip-version-check", "--no-color", "--no-python-version-warning", 
+        "--disable-pip-version-check",
+        "--no-color",
+        "--no-python-version-warning",
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE)
 
@@ -64,7 +93,10 @@ async def _check_update(latest_version=None):
 async def _do_update():
     proc = await asyncio.create_subprocess_exec(
         sys.executable, '-m', 'pip', 'install', "riego", "--upgrade",
-        "--disable-pip-version-check", "--no-color", "--no-python-version-warning", "-q", "-q", "-q")
+        "--disable-pip-version-check",
+        "--no-color",
+        "--no-python-version-warning",
+        "-q", "-q", "-q")
     await proc.wait()
     return proc.returncode
 

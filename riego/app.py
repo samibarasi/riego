@@ -26,11 +26,13 @@ from riego.__init__ import __version__
 
 
 async def on_startup(app):
+    app['log'].info("on_startup")
     app['background_timer'] = asyncio.create_task(app['timer'].start_async())
     app['background_mqtt'] = asyncio.create_task(app['mqtt'].start_async())
 
 
 async def on_cleanup(app):
+    app['log'].info("on_cleanup")
     app['background_timer'].cancel()
     await app['background_timer']
     app['background_mqtt'].cancel()
@@ -38,7 +40,7 @@ async def on_cleanup(app):
 
 
 async def on_shutdown(app):
-    pass
+    app['log'].info("on_shutdown")
 
 
 def main():
@@ -54,9 +56,12 @@ def main():
           default=1024*300, type=int)
     p.add('--event_log_backup_count', help='How many files to rotate',
           default=3, type=int)
-    p.add('-m', '--mqtt_host', help='IP adress of mqtt host', required=True)
-    p.add('-p', '--mqtt_port', help='Port of mqtt service', required=True,
-          type=int)
+    p.add('-m', '--mqtt_host', help='IP adress of mqtt host',
+          default='127.0.0.1')
+    p.add('-p', '--mqtt_port', help='Port of mqtt service',
+          default=1883, type=int)
+    p.add('--mqtt_client_id', help='Client ID for MQTT-Connection',
+          default='riego_controler')
     p.add('--database_migrations_dir',
           help='path to database migrations directory',
           default=pkg_resources.resource_filename('riego', 'migrations'))
@@ -125,3 +130,4 @@ def main():
     web.run_app(app,
                 host=options.http_server_bind_address,
                 port=options.http_server_bind_port)
+    print("Exit")

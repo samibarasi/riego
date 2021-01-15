@@ -17,4 +17,6 @@ async def run():
         for item in data:
             print(item['name'])
 
-asyncio.run(run())
+# asyncio.run(run())
+
+print ("Test{}string{}".format(1,3))
