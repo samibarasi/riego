@@ -42,4 +42,5 @@ class Timer():
             except asyncio.CancelledError:
                 self.__log.debug("Timer: trapped cancel")
                 break
+        self.__log.debug("Timer: shutdown valve")
         await v.set_is_running(0)

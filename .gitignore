@@ -1,8 +1,10 @@
 .venv/
+.venv37/
 .vscode/
 log/*
 db/*
 
+/CHANGELOG.md
 /PRIVATE.txt
 /requirements_dev.txt
 /tt.py

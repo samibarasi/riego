@@ -16,7 +16,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
     install_requires=[
-        'gmqtt',
+        'paho-mqtt',
         'ConfigArgParse',
         'yoyo-migrations',
         'aiohttp',
@@ -29,7 +29,7 @@ setuptools.setup(
     include_package_data=True,
     scripts=['bin/setup_riego_service.sh'],
     entry_points={
-        'console_scripts': ['riego_service=riego.app:main'],
+        'console_scripts': ['riego=riego.app:main'],
     },
     classifiers=[
         "Programming Language :: Python :: 3.7",

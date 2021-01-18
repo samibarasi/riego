@@ -140,6 +140,8 @@ class Valve():
             self.__db_conn.execute(
                 'UPDATE valves SET is_running = ?  WHERE id = ?',
                 (val, self.__id))
+        # TODO raise Execption if publish does not work
+        # Or async wait for result an decide what to do than
         self.__mqtt.client.publish(self.__topic, val)
         self.__event_log.info(str(val) + ';' + self.name)
         await self.send_status_with_websocket('is_running', val)
@@ -152,6 +154,7 @@ class Valve():
             await self.send_status_with_websocket('last_run',
                                                   str(self.__last_run))
         self.__is_running = val
+        return True
 
     @ property
     def is_enabled(self):

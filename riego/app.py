@@ -9,7 +9,7 @@ import pathlib
 import riego.database
 import riego.valves
 import riego.parameter
-import riego.mqtt
+import riego.mqtt_paho as riego_mqtt
 import riego.logger
 import riego.timer
 
@@ -27,16 +27,18 @@ from riego.__init__ import __version__
 
 async def on_startup(app):
     app['log'].info("on_startup")
-    app['background_timer'] = asyncio.create_task(app['timer'].start_async())
     app['background_mqtt'] = asyncio.create_task(app['mqtt'].start_async())
+    app['background_timer'] = asyncio.create_task(app['timer'].start_async())
 
 
 async def on_cleanup(app):
     app['log'].info("on_cleanup")
+
     app['background_timer'].cancel()
     await app['background_timer']
-    app['background_mqtt'].cancel()
-    await app['background_mqtt']
+
+#    app['background_mqtt'].cancel()
+#    await app['background_mqtt']
 
 
 async def on_shutdown(app):
@@ -62,6 +64,8 @@ def main():
           default=1883, type=int)
     p.add('--mqtt_client_id', help='Client ID for MQTT-Connection',
           default='riego_controler')
+    p.add('--mqtt_subscription_topic', help='MQTT Topic that we are listening',
+          default='riego/#')
     p.add('--database_migrations_dir',
           help='path to database migrations directory',
           default=pkg_resources.resource_filename('riego', 'migrations'))
@@ -92,20 +96,24 @@ def main():
         print('Version: ', __version__)
         os.sys.exit()
 
-    if options.enable_asyncio_debug:
-        asyncio.get_event_loop().set_debug(True)
+    # if os.name == 'nt':
+    asyncio.DefaultEventLoopPolicy = asyncio.WindowsSelectorEventLoopPolicy
 
     if os.name == "posix":
         import uvloop  # pylint: disable=import-error
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
+    if options.enable_asyncio_debug:
+        asyncio.get_event_loop().set_debug(True)
+
     app = web.Application()
 
+    app['version'] = __version__
     app['options'] = options
     app['log'] = riego.logger.create_log(options)
     app['event_log'] = riego.logger.create_event_log(options)
     app['db'] = riego.database.Database(app)
-    app['mqtt'] = riego.mqtt.Mqtt(app)
+    app['mqtt'] = riego_mqtt.Mqtt(app)
     app['valves'] = riego.valves.Valves(app)
     app['parameter'] = riego.parameter.Parameter(app)
     app['timer'] = riego.timer.Timer(app)
@@ -114,8 +122,9 @@ def main():
     app.on_cleanup.append(on_cleanup)
     app.on_shutdown.append(on_shutdown)
 
-    aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(
-        options.http_server_template_dir))
+    aiohttp_jinja2.setup(app,
+                         loader=jinja2.FileSystemLoader(
+                             options.http_server_template_dir))
 
     setup_routes(app)
     setup_middlewares(app)

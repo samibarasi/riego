@@ -44,9 +44,11 @@ async def system_setup(request):
     return {'text': 'Hello, world2'}
 
 
+@aiohttp_jinja2.template('system/index.html')
 async def system_event_log(request):
-    with open(request.app['options'].event_log, "rb") as fp:
-        return web.Response(body=fp.read(), content_type="text/plain")
+    with open(request.app['options'].event_log, "rt") as fp:
+        # return web.Response(body=fp.read(), content_type="text/plain")
+        return {'text': fp.read()}
 
 
 async def system_exc(request):

@@ -1,22 +1,52 @@
 import asyncio
-import sys
-import json
+import mqttools
+
+asyncio.DefaultEventLoopPolicy = asyncio.WindowsSelectorEventLoopPolicy
+
+async def subscriber():
+    client = mqttools.Client('192.168.88.8', 1883)
+
+    await client.start()
+    await client.subscribe('/test/#')
+
+    while True:
+        topic, message = await client.messages.get()
+
+        if topic is None:
+            print('Broker connection lost!')
+            break
+
+        print(f'Topic:   {topic}')
+        print(f'Message: {message}')
+
+# asyncio.run(subscriber())
 
 
-async def run():
+async def publisher():
+    async with mqttools.Client('192.168.88.8', 1883) as client:
+        client.publish('/test/mqttools/foo', b'bar')
 
-    proc = await asyncio.create_subprocess_exec(
-        sys.executable, '-m', 'pip', 'list', "-o", "--format=json",
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE)
+#asyncio.run(publisher())
 
-    stdout, stderr = await proc.communicate()
 
-    if stdout:
-        data = json.loads(stdout)
-        for item in data:
-            print(item['name'])
 
-# asyncio.run(run())
 
-print ("Test{}string{}".format(1,3))
+
+
+async def publish_to_self():
+    client = mqttools.Client('192.168.88.8', 1883)
+
+    await client.start()
+    await client.subscribe('/test/mqttools/foo')
+
+    client.publish('/test/mqttools/foo', b'publish_to_self message')
+    topic, message = await client.messages.get()
+
+    if topic is None:
+        print('Broker connection lost!')
+    else:
+        print(f'Topic:   {topic}')
+        print(f'Message: {message}')
+
+
+asyncio.run(publish_to_self())
