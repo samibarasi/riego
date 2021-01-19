@@ -5,6 +5,7 @@ log/*
 db/*
 
 /PRIVATE.txt
+/CHANGELOG.md
 /requirements_dev.txt
 /tt.py
 /upload.bat

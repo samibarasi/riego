@@ -8,15 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## <!--next-version-placeholder-->
 
-## v0.5.6 (2021-01-18)
-
-
-## v0.5.5 (2021-01-18)
-
-
-## v0.5.5 (2021-01-18)
-
-
 ## [0.5.0] - 2021-01-17
 ### Added
 - Webinterface with Footer
