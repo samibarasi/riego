@@ -4,7 +4,7 @@ import pkg_resources
 import os
 import pathlib
 # import logging
-# import sys
+import sys
 
 import riego.database
 import riego.valves
@@ -26,9 +26,15 @@ from riego.__init__ import __version__
 
 
 async def on_startup(app):
+    if app['options'].enable_asyncio_debug:
+        asyncio.get_event_loop().set_debug(True)
     app['log'].info("on_startup")
     app['background_mqtt'] = asyncio.create_task(app['mqtt'].start_async())
     app['background_timer'] = asyncio.create_task(app['timer'].start_async())
+
+
+async def on_shutdown(app):
+    app['log'].info("on_shutdown")
 
 
 async def on_cleanup(app):
@@ -37,12 +43,8 @@ async def on_cleanup(app):
     app['background_timer'].cancel()
     await app['background_timer']
 
-#    app['background_mqtt'].cancel()
-#    await app['background_mqtt']
-
-
-async def on_shutdown(app):
-    app['log'].info("on_shutdown")
+    app['background_mqtt'].cancel()
+    await app['background_mqtt']
 
 
 def main():
@@ -96,15 +98,12 @@ def main():
         print('Version: ', __version__)
         os.sys.exit()
 
-    # if os.name == 'nt':
-    asyncio.DefaultEventLoopPolicy = asyncio.WindowsSelectorEventLoopPolicy
+    if sys.version_info >= (3, 8):
+        asyncio.DefaultEventLoopPolicy = asyncio.WindowsSelectorEventLoopPolicy
 
     if os.name == "posix":
         import uvloop  # pylint: disable=import-error
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-
-    if options.enable_asyncio_debug:
-        asyncio.get_event_loop().set_debug(True)
 
     app = web.Application()
 
@@ -119,8 +118,8 @@ def main():
     app['timer'] = riego.timer.Timer(app)
 
     app.on_startup.append(on_startup)
-    app.on_cleanup.append(on_cleanup)
     app.on_shutdown.append(on_shutdown)
+    app.on_cleanup.append(on_cleanup)
 
     aiohttp_jinja2.setup(app,
                          loader=jinja2.FileSystemLoader(

@@ -4,10 +4,10 @@ import asyncio
 
 class Timer():
     def __init__(self, app):
-        self.__log = app['log']
         self.__valves = app['valves']
         self.__parameter = app['parameter']
         self.__options = app['options']
+        self.__log = app['log']
 
     async def start_async(self):
         v = self.__valves.get_next()

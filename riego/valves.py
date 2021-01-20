@@ -7,12 +7,12 @@ class Valves():
     def __init__(self, app):
         db_conn = app['db'].conn
         mqtt = app['mqtt']
-        event_log = app['event_log']
         self.log = app['log']
+        event_log = app['event_log']
         self._valves = []
         self.idx_valves = -1
         for row in db_conn.execute('select * from valves'):
-            v = Valve(db_conn, mqtt, event_log, row)
+            v = Valve(db_conn, mqtt, row, event_log)
             self._valves.append(v)
 
         riego.web.websockets.subscribe('valves', self._ws_handler)
@@ -39,7 +39,7 @@ class Valves():
 
     async def _ws_handler(self, msg: dict):
         """
-        Call function from Object Valves according to msg['propo']
+        Call metho from Object Valves according to msg['prop']
         """
         if not msg['action'] == 'update':
             return None
@@ -50,7 +50,7 @@ class Valves():
 
 class Valve():
 
-    def __init__(self, db_conn, mqtt, event_log, row):
+    def __init__(self, db_conn, mqtt, row, event_log):
         self.__db_conn = db_conn
         self.__mqtt = mqtt
         self.__event_log = event_log
