@@ -3,51 +3,6 @@ import json
 import riego.web.websockets
 
 
-class Valves():
-    def __init__(self, app):
-        db_conn = app['db'].conn
-        mqtt = app['mqtt']
-        self.log = app['log']
-        event_log = app['event_log']
-        self._valves = []
-        self.idx_valves = -1
-        for row in db_conn.execute('select * from valves'):
-            v = Valve(db_conn, mqtt, row, event_log)
-            self._valves.append(v)
-
-        riego.web.websockets.subscribe('valves', self._ws_handler)
-
-    def get_next(self):
-        self.idx_valves += 1
-        if len(self._valves) == 0:
-            return None
-        if self.idx_valves >= len(self._valves):
-            self.idx_valves = 0
-        return self._valves[self.idx_valves]
-
-    def get_dict(self):
-        ret = {}
-        for v in self._valves:
-            ret[v.id] = v.get_dict()
-        return ret
-
-    def get_valve_by_id(self, id: int):
-        for v in self._valves:
-            if v.id == int(id):
-                return v
-        return None
-
-    async def _ws_handler(self, msg: dict):
-        """
-        Call metho from Object Valves according to msg['prop']
-        """
-        if not msg['action'] == 'update':
-            return None
-        valve = self.get_valve_by_id(msg['id'])
-        func = getattr(valve, "set_" + msg['prop'])
-        await func(msg['value'])
-
-
 class Valve():
 
     def __init__(self, db_conn, mqtt, row, event_log):
@@ -205,3 +160,54 @@ class Valve():
         ret = json.dumps(ret)
         await riego.web.websockets.send_to_all(ret)
         return ret
+
+
+class Valves():
+    def __init__(self, app):
+        db_conn = app['db'].conn
+        mqtt = app['mqtt']
+        self.log = app['log']
+        event_log = app['event_log']
+        self._valves = []
+        self.idx_valves = -1
+        for row in db_conn.execute('select * from valves'):
+            v = Valve(db_conn, mqtt, row, event_log)
+            self._valves.append(v)
+
+        riego.web.websockets.subscribe('valves', self._ws_handler)
+
+    def get_next(self):
+        self.idx_valves += 1
+        if len(self._valves) == 0:
+            return None
+        if self.idx_valves >= len(self._valves):
+            self.idx_valves = 0
+        return self._valves[self.idx_valves]
+
+    def get_dict(self):
+        ret = {}
+        for v in self._valves:
+            ret[v.id] = v.get_dict()
+        return ret
+
+    def get_valve_by_id(self, id: int) -> Valve:
+        """Returns Valve-Object from database with given id.
+
+        :param id: Unique id from database
+        :type id: int
+        :return: None if not found
+        :rtype: Valve
+        """
+        for v in self._valves:
+            if v.id == int(id):
+                return v
+        return None
+
+    async def _ws_handler(self, msg: dict):
+        """Call method from Object Valves according to msg['prop']
+        """
+        if not msg['action'] == 'update':
+            return None
+        valve = self.get_valve_by_id(msg['id'])
+        func = getattr(valve, "set_" + msg['prop'])
+        await func(msg['value'])

@@ -51,7 +51,7 @@
 </div>
 
 <script>
-	var wsUri = (window.location.protocol == 'https:' && 'wss://' || 'ws://') + window.location.host + "/ws";
+	var wsUri = (window.location.protocol == 'https:' && 'wss://' || 'ws://') + window.location.host + "{{app.options.websocket_path}}";
 	ws = new WebSocket(wsUri);
 
 	ws.onmessage = function (event) {

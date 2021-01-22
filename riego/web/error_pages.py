@@ -28,7 +28,7 @@ def create_error_middleware(overrides):
     return error_middleware
 
 
-def setup_middlewares(app):
+def setup_error_pages(app):
     error_middleware = create_error_middleware({
         404: handle_404,
         500: handle_500

@@ -1,33 +1,43 @@
 from aiohttp import web
 import json
 
-
-__ws_list = None
+__ws_list = None   # List of open websockets.
 __subscriptions = {}
 
 
-def setup_websockets(app):
+def setup_websockets(app) -> list:
     global __ws_list
-    if not isinstance(__ws_list, list):
+    if not isinstance(__ws_list, list): 
+        # very first run. We set up routes an install shutdown
         __ws_list = []
-        app.router.add_get('/ws', _ws_handler)
+        app.router.add_get(app['options'].websocket_path,  _ws_handler)
         app.on_shutdown.append(_my_shutdown)
     return __ws_list
 
 
-async def send_to_all(msg: dict):
+async def send_to_all(msg: dict) -> None:
     for ws in __ws_list:
         await ws.send_str(msg)
     return None
 
 
-def subscribe(model: str, callback):
+def subscribe(model: str, callback) -> None:
+    """Install a callback function for given model. Eacch message
+    should contain a json data like this: {model: <model_name>}
+
+    :param model: name of data model that asks for websocket
+    :type model: str
+    :param callback: callback function that is called when data arrives
+    :type callback: function with parameter msg
+    :return: None
+    :rtype: None
+    """
     global __subscriptions
     __subscriptions[model] = callback
     return None
 
 
-async def _ws_handler(request):
+async def _ws_handler(request) -> web.WebSocketResponse:
     global __subscriptions
     ws = web.WebSocketResponse()
     await ws.prepare(request)
@@ -49,7 +59,7 @@ async def _ws_handler(request):
     return ws
 
 
-async def _my_shutdown(app):
+async def _my_shutdown(app) -> None:
     for ws in __ws_list:
         await ws.close()
     return None

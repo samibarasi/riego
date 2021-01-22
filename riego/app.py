@@ -9,12 +9,13 @@ import sys
 import riego.database
 import riego.valves
 import riego.parameter
-import riego.mqtt_paho as riego_mqtt
+import riego.mqtt_gmqtt as riego_mqtt
 import riego.logger
 import riego.timer
+import riego.boxes
 
 from riego.web.routes import setup_routes
-from riego.web.middlewares import setup_middlewares
+from riego.web.error_pages import setup_error_pages
 from riego.web.websockets import setup_websockets
 
 from aiohttp import web
@@ -83,6 +84,8 @@ def main():
     p.add('--http_server_template_dir',
           help='Serve template files from this directory',
           default=pkg_resources.resource_filename('riego.web', 'templates'))
+    p.add('--websocket_path', help='url path for websocket',
+          default="/ws")
     p.add('-v', '--verbose', help='verbose', action='store_true')
     p.add('--version', help='Print version', action='store_true')
     p.add('--enable_aiohttp_debug_toolbar', action='store_true')
@@ -116,6 +119,7 @@ def main():
     app['valves'] = riego.valves.Valves(app)
     app['parameter'] = riego.parameter.Parameter(app)
     app['timer'] = riego.timer.Timer(app)
+    #app['boxes'] = riego.boxes.Boxes(app)
 
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
@@ -126,7 +130,7 @@ def main():
                              options.http_server_template_dir))
 
     setup_routes(app)
-    setup_middlewares(app)
+    setup_error_pages(app)
     setup_websockets(app)
 
     if options.enable_aiohttp_debug_toolbar:

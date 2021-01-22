@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import time
 
 from gmqtt import Client as MQTTClient
 from gmqtt.mqtt.constants import MQTTv311
@@ -28,24 +27,23 @@ class Mqtt:
 
     def _on_connect(self, client, flags, rc, properties):
         self.__log.debug('MQTT Connected')
-        self.client.subscribe('status/*', qos=0)
+        self.client.subscribe('stat/#', qos=0)
 
     def _on_message(self, client, topic, payload, qos, properties):
-        self.__log.debug('MQTT RECV MSG:' + str(payload))
+        self.__log.debug(f'MQTT RECV MSG: {payload}, TOPIC: {topic}')
 
     def _on_disconnect(self, client, packet, exc=None):
         self.__log.debug('MQTT Disconnected')
-#        exit(1)
 
     def _on_subscribe(self, client, mid, qos, properties):
         self.__log.debug('MQTT SUBSCRIBED')
 
     async def start_async(self):
-
         await self.client.connect(self.__options.mqtt_host,
                                   port=self.__options.mqtt_port,
                                   keepalive=10,
                                   version=MQTTv311)
+
 #        while True:
 #            try:
 #                await asyncio.sleep(1)
@@ -57,6 +55,9 @@ class Mqtt:
 
     async def shutdown(self):
         await self.client.disconnect()
+
+
+# Manually create Mock-Object
 
 
 class Options():
@@ -71,15 +72,21 @@ async def main():
     app = {}
     options = Options()
     app['options'] = options
-    app['log'] = logging.getLogger()
+    logger = logging
+    logging.basicConfig(level=logging.DEBUG)
+    app['log'] = logger
 
     mqttc = Mqtt(app)
     await mqttc.start_async()
 
     mqttc.client.publish('cmnd/dev01/POWER1', payload="ON", qos=1)
 
-    await asyncio.sleep(6)
-    await mqttc.client.disconnect()
+    try:
+        await asyncio.sleep(60)
+    except asyncio.CancelledError:
+        print('MQTT: trapped cancel')
+    finally:
+        await mqttc.client.disconnect()
 
 
 if __name__ == "__main__":
