@@ -4,25 +4,25 @@ import asyncio
 
 class Timer():
     def __init__(self, app):
-        self.__valves = app['valves']
-        self.__parameter = app['parameter']
-        self.__options = app['options']
-        self.__log = app['log']
+        self._valves = app['valves']
+        self._parameter = app['parameter']
+        self._options = app['options']
+        self._log = app['log']
 
-        self.maxDuration = self.__parameter.get('maxDuration')
-        self.start_hour, self.start_minute = self.__parameter.get(
+        self._maxDuration = self._parameter.get('maxDuration')
+        self._start_hour, self._start_minute = self._parameter.get(
             'startTime').split(':')
-        self.start_hour = int(self.start_hour)
-        self.start_minute = int(self.start_minute)
-        self.__end_time = None
-        self.__start_time = None
+        self._start_hour = int(self._start_hour)
+        self._start_minute = int(self._start_minute)
+        self._running_period_end = None
+        self._running_period_start = None
 
     async def start_async(self):
-        v = self.__valves.get_next()
+        v = self._valves.get_next()
         while True:
             try:
                 if v.is_running:
-                    if self.__options.enable_timer_dev_mode:
+                    if self._options.enable_timer_dev_mode:
                         td = timedelta(minutes=0, seconds=v.duration)
                     else:
                         td = timedelta(minutes=v.duration)
@@ -30,45 +30,45 @@ class Timer():
                     if datetime.now() - v.last_run > td:
                         # Laufzeit erreicht
                         await v.set_is_running(0)
-                        self.__log.debug("valveOff " + v.name)
+                        self._log.debug("valveOff " + v.name)
                     else:
                         pass
                 else:
-                    if self.__options.enable_timer_dev_mode:
+                    if self._options.enable_timer_dev_mode:
                         td = timedelta(days=0, seconds=v.interval)
                     else:
                         td = timedelta(days=v.interval)
 
                     if (datetime.now() - v.last_run > td and v.is_enabled and
-                       self.is_running_time()):
+                       self.is_running_period()):
                         # Intervall erreicht
                         await v.set_is_running(1)
-                        self.__log.debug("valveOn " + v.name)
+                        self._log.debug("valveOn " + v.name)
                     else:
-                        v = self.__valves.get_next()
-                        self.__log.debug("NextValve: " + v.name)
-                await asyncio.sleep(1)
+                        v = self._valves.get_next()
+                        self._log.debug("NextValve: " + v.name)
+                await asyncio.sleep(2)
             except asyncio.CancelledError:
-                self.__log.debug("Timer: trapped cancel")
+                self._log.debug("Timer: trapped cancel")
                 break
-        self.__log.debug("Timer: shutdown valve")
+        self._log.debug("Timer: shutdown valve")
         await v.set_is_running(0)
 
-    def is_running_time(self) -> bool:
-        if self.__start_time is None:
-            self.__start_time = datetime.now().replace(
-                hour=self.start_hour, minute=self.start_minute)
+    def is_running_period(self) -> bool:
+        if self._running_period_start is None:
+            self._running_period_start = datetime.now().replace(
+                hour=self._start_hour, minute=self._start_minute)
 
-        if datetime.now() < self.__start_time:
-            self.__end_time = None
+        if datetime.now() < self._running_period_start:
+            self._running_period_end = None
             return False
 
-        if self.__end_time is None:
-            self.__end_time = self.__start_time + \
-                timedelta(minutes=int(self.maxDuration))
+        if self._running_period_end is None:
+            self._running_period_end = self._running_period_start + \
+                timedelta(minutes=int(self._maxDuration))
 
-        if datetime.now() > self.__end_time:
-            self.__start_time = None
+        if datetime.now() > self._running_period_end:
+            self._running_period_start = None
             return False
 
         return True

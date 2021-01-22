@@ -119,7 +119,7 @@ def main():
     app['valves'] = riego.valves.Valves(app)
     app['parameter'] = riego.parameter.Parameter(app)
     app['timer'] = riego.timer.Timer(app)
-    #app['boxes'] = riego.boxes.Boxes(app)
+    app['boxes'] = riego.boxes.Boxes(app)
 
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)

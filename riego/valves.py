@@ -175,6 +175,7 @@ class Valves():
             self._valves.append(v)
 
         riego.web.websockets.subscribe('valves', self._ws_handler)
+        mqtt.subscribe('stat/+/RESULT', self._mqtt_handler)
 
     def get_next(self):
         self.idx_valves += 1
@@ -211,3 +212,7 @@ class Valves():
         valve = self.get_valve_by_id(msg['id'])
         func = getattr(valve, "set_" + msg['prop'])
         await func(msg['value'])
+
+    def _mqtt_handler(self, topic: str, payload: str) -> bool:
+        print(f'Topic: {topic}, payload: {payload}')
+        return True
