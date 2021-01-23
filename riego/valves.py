@@ -1,13 +1,15 @@
 from datetime import datetime
 import json
 import riego.web.websockets
+import re
 
 
 class Valve():
-    def __init__(self, db_conn, mqtt, row, event_log):
-        self.__db_conn = db_conn
-        self.__mqtt = mqtt
-        self.__event_log = event_log
+    def __init__(self, row, app):
+        self.__db_conn = app['db'].conn
+        self.__mqtt = app['mqtt']
+        self.__event_log = app['event_log']
+        self.__options = app['options']
 
         self.bool_to_int = {'true': 1, 'false': 0, True: 1, False: 0,
                             'True': 1, 'False': 0, 'on': 1, 'off': 0,
@@ -96,7 +98,7 @@ class Valve():
                 (val, self.__id))
         # TODO raise Execption if publish does not work
         # Or async wait for result an decide what to do than
-        topic = self.options.mqtt_cmnd_prefix + self.__topic
+        topic = self.__options.mqtt_cmnd_prefix + self.__topic
         self.__mqtt.client.publish(topic, val)
         self.__event_log.info(str(val) + ';' + self.name)
         await self.send_status_with_websocket('is_running', val)
@@ -166,20 +168,19 @@ class Valves():
     def __init__(self, app):
         db_conn = app['db'].conn
         mqtt = app['mqtt']
-        event_log = app['event_log']
         self.log = app['log']
         self.options = app['options']
 
         self._valves = []
         self.idx_valves = -1
         for row in db_conn.execute('select * from valves'):
-            v = Valve(db_conn, mqtt, row, event_log)
+            v = Valve(row, app)
             self._valves.append(v)
 
 # TODO Dependenca Injection for websockets.
         riego.web.websockets.subscribe('valves', self._ws_handler)
         mqtt.subscribe(self.options.mqtt_result_subscription,
-                       self._mqtt_handler)
+                       self._mqtt_result_handler)
 
     def get_next(self):
         self.idx_valves += 1
@@ -208,6 +209,19 @@ class Valves():
                 return v
         return None
 
+    def get_valve_by_topic(self, topic: str) -> Valve:
+        """Returns Valve-Object from database with given topic
+
+        :param topic: Unique topic from database
+        :type topic: str
+        :return: None if not found
+        :rtype: Valve
+        """
+        for v in self._valves:
+            if v.topic == topic:
+                return v
+        return None
+
     async def _ws_handler(self, msg: dict):
         """Call method from Object Valves according to msg['prop']
         """
@@ -217,6 +231,16 @@ class Valves():
         func = getattr(valve, "set_" + msg['prop'])
         await func(msg['value'])
 
-    async def _mqtt_handler(self, topic: str, payload: str) -> bool:
-        print(f'Topic: {topic}, payload: {payload}')
+    async def _mqtt_result_handler(self, topic: str, payload: str) -> bool:
+        #        print(f'Topic: {topic}, payload: {payload}')
+        box = re.search('/(.*?)/', topic).group(1)
+
+        p_dict = json.loads(payload)
+        print(type(p_dict))
+        for key in p_dict:
+            topic = box + '/' + key
+#            print(f'key: {key}, value: {p_dict[key]}')
+#            print(f'topic: topic, value: {p_dict[key]}')
+            valve = self.get_valve_by_topic(topic)
+            print (valve.name)
         return True
