@@ -86,6 +86,22 @@ def main():
           default=pkg_resources.resource_filename('riego.web', 'templates'))
     p.add('--websocket_path', help='url path for websocket',
           default="/ws")
+
+    p.add('--mqtt_cmnd_prefix', help='',
+          default="cmnd")
+    p.add('--mqtt_result_subscription', help='',
+          default="stat/+/RESULT")
+    p.add('--mqtt_status_subscription', help='yet not used',
+          default="stat/+/STATUS")
+    p.add('--mqtt_tele_subscription', help='yet not used',
+          default="tele/#")
+    p.add('--mqtt_tele_filter_LWT', help='yet not used',
+          default="tele/+/LWT")
+    p.add('--mqtt_tele_filter_SENSOR',
+          help='yet not used', default="tele/+/SENSOR")
+    p.add('--mqtt_tele_filter_state', help='yet not used',
+          default="tele/+/state")
+
     p.add('-v', '--verbose', help='verbose', action='store_true')
     p.add('--version', help='Print version', action='store_true')
     p.add('--enable_aiohttp_debug_toolbar', action='store_true')

@@ -1,11 +1,9 @@
 from datetime import datetime
 import json
 import riego.web.websockets
-import asyncio
 
 
 class Valve():
-
     def __init__(self, db_conn, mqtt, row, event_log):
         self.__db_conn = db_conn
         self.__mqtt = mqtt
@@ -98,7 +96,8 @@ class Valve():
                 (val, self.__id))
         # TODO raise Execption if publish does not work
         # Or async wait for result an decide what to do than
-        self.__mqtt.client.publish(self.__topic, val)
+        topic = self.options.mqtt_cmnd_prefix + self.__topic
+        self.__mqtt.client.publish(topic, val)
         self.__event_log.info(str(val) + ';' + self.name)
         await self.send_status_with_websocket('is_running', val)
         if val == 1:
@@ -169,6 +168,7 @@ class Valves():
         mqtt = app['mqtt']
         event_log = app['event_log']
         self.log = app['log']
+        self.options = app['options']
 
         self._valves = []
         self.idx_valves = -1
@@ -178,7 +178,8 @@ class Valves():
 
 # TODO Dependenca Injection for websockets.
         riego.web.websockets.subscribe('valves', self._ws_handler)
-        mqtt.subscribe('stat/+/RESULT', self._mqtt_handler)
+        mqtt.subscribe(self.options.mqtt_result_subscription,
+                       self._mqtt_handler)
 
     def get_next(self):
         self.idx_valves += 1

@@ -7,7 +7,7 @@ __subscriptions = {}
 
 def setup_websockets(app) -> list:
     global __ws_list
-    if not isinstance(__ws_list, list): 
+    if not isinstance(__ws_list, list):
         # very first run. We set up routes an install shutdown
         __ws_list = []
         app.router.add_get(app['options'].websocket_path,  _ws_handler)
