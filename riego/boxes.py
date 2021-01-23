@@ -1,3 +1,4 @@
+import asyncio
 
 
 class Boxes():
@@ -5,6 +6,6 @@ class Boxes():
         self.mqtt = app['mqtt']
         self.mqtt.subscribe('tele/#', self._mqtt_handler)
 
-    def _mqtt_handler(self, topic: str, payload: str) -> bool:
+    async def _mqtt_handler(self, topic: str, payload: str) -> bool:
         print(f'Topic: {topic}, payload: {payload}')
         return True

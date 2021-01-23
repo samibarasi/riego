@@ -23,12 +23,14 @@ class Mqtt:
         for key in self.subscriptions:
             self.client.subscribe(key, qos=0)
 
-    def _on_message(self, client, topic, payload, qos, properties):
+    async def _on_message(self, client, topic, payload, qos, properties):
+        payload = payload.decode()
         self._log.debug(f'MQTT RECV MSG: {payload}, TOPIC: {topic}')
         for key in self.subscriptions:
             if self.match_topic(topic, key):
                 func = self.subscriptions[key]
-                func(topic, payload)
+                await func(topic, payload)
+        return 0
 
     def _on_disconnect(self, client, packet, exc=None):
         self._log.debug('MQTT Disconnected')

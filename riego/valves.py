@@ -1,6 +1,7 @@
 from datetime import datetime
 import json
 import riego.web.websockets
+import asyncio
 
 
 class Valve():
@@ -215,6 +216,6 @@ class Valves():
         func = getattr(valve, "set_" + msg['prop'])
         await func(msg['value'])
 
-    def _mqtt_handler(self, topic: str, payload: str) -> bool:
+    async def _mqtt_handler(self, topic: str, payload: str) -> bool:
         print(f'Topic: {topic}, payload: {payload}')
         return True
