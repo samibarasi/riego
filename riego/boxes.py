@@ -3,10 +3,8 @@
 class Boxes():
     def __init__(self, app):
         self.mqtt = app['mqtt']
-#        self._subscribe()
+        self.mqtt.subscribe('tele/#', self._mqtt_handler)
 
-    def _my_callback(self, msg):
-        print(f'Payload: {msg.payload}, Topic: {msg.topic}')
-
-    def _subscribe(self):
-        self.mqtt.subscribe("stat/#", self._my_callback)
+    def _mqtt_handler(self, topic: str, payload: str) -> bool:
+        print(f'Topic: {topic}, payload: {payload}')
+        return True

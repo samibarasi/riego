@@ -166,14 +166,16 @@ class Valves():
     def __init__(self, app):
         db_conn = app['db'].conn
         mqtt = app['mqtt']
-        self.log = app['log']
         event_log = app['event_log']
+        self.log = app['log']
+
         self._valves = []
         self.idx_valves = -1
         for row in db_conn.execute('select * from valves'):
             v = Valve(db_conn, mqtt, row, event_log)
             self._valves.append(v)
 
+# TODO Dependenca Injection for websockets.
         riego.web.websockets.subscribe('valves', self._ws_handler)
         mqtt.subscribe('stat/+/RESULT', self._mqtt_handler)
 
