@@ -295,7 +295,7 @@ class Valves():
             topic = box + '/' + channel
             valve = self.get_valve_by_topic(topic)
             if valve is None:
-                self.log.error(f'valves._mqtt_result_handler: unknown topic: {topic}')
+                self.log.error(f'valves._mqtt_result_handler: unknown topic: {topic}')  # noqa: E501
                 continue
             value = bool_to_int[payload[channel]]
             if value == 1:

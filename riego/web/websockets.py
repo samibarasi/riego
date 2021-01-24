@@ -19,6 +19,7 @@ def setup_websockets(app) -> list:
 
 
 async def send_to_all(msg: dict) -> None:
+    global __ws_list
     for ws in __ws_list:
         await ws.send_str(msg)
     return None
@@ -42,6 +43,7 @@ def subscribe(model: str, callback) -> None:
 async def _ws_handler(request) -> web.WebSocketResponse:
     global __subscriptions
     global __log
+    global __ws_list
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
@@ -54,7 +56,11 @@ async def _ws_handler(request) -> web.WebSocketResponse:
             __log.debug(msg)
             if msg.type == web.WSMsgType.TEXT:
                 msg = json.loads(msg.data)
-                await dispatch_message(msg)
+#                await dispatch_message(msg)
+            else:
+                break
+    except Exception as e:
+        __log.error(f'websocket.py, exeption {e}')
     finally:
         __log.debug(f'Finally ws remove: {ws}')
         __ws_list.remove(ws)
@@ -81,6 +87,8 @@ async def dispatch_message(msg: dict) -> bool:
 
 
 async def _my_shutdown(app) -> None:
+    global __ws_list
     for ws in __ws_list:
+        __log.debug(f'calling ws.close for: {ws}')
         await ws.close()
     return None
