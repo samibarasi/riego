@@ -3,10 +3,13 @@ import json
 
 __ws_list = None   # List of open websockets.
 __subscriptions = {}
+__log = None
 
 
 def setup_websockets(app) -> list:
     global __ws_list
+    global __log
+    __log = app['log']
     if not isinstance(__ws_list, list):
         # very first run. We set up routes an install shutdown
         __ws_list = []
@@ -41,6 +44,7 @@ def subscribe(model: str, callback) -> None:
 
 async def _ws_handler(request) -> web.WebSocketResponse:
     global __subscriptions
+    global __log
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
@@ -50,32 +54,34 @@ async def _ws_handler(request) -> web.WebSocketResponse:
 
     try:
         async for msg in ws:
-            print(msg)
+            __log.debug(msg)
             if msg.type == web.WSMsgType.TEXT:
                 msg = json.loads(msg.data)
                 await dispatch_message(msg)
     finally:
-        print(f'Finally ws remove: {ws}')
+        __log.debug(f'Finally ws remove: {ws}')
         __ws_list.remove(ws)
     return ws
 
 
 async def dispatch_message(msg: dict) -> bool:
     global __subscriptions
+    global __log
     model = msg.get('model', None)
     if model is None:
-        print(f'Message not for a data model: {msg}')
+        __log.error(f'Message not for a data model: {msg}')
         return False
     callback_func = __subscriptions.get(model, None)
     if callback_func is None:
-        print(f'Message for an unknown data model: {msg}')
+        __log.error(f'Message for an unknown data model: {msg}')
         return False
     try:
         await callback_func(msg)
     except Exception as e:
-        print(f'websocket.py, exeption {e} in callable {callback_func}')
+        __log.error(f'websocket.py, exeption {e} in callable {callback_func}')
         return False
     return True
+
 
 async def _my_shutdown(app) -> None:
     for ws in __ws_list:
