@@ -56,7 +56,7 @@ async def _ws_handler(request) -> web.WebSocketResponse:
             __log.debug(msg)
             if msg.type == web.WSMsgType.TEXT:
                 msg = json.loads(msg.data)
-#                await dispatch_message(msg)
+                await dispatch_message(msg)
             else:
                 break
     except Exception as e:

@@ -13,7 +13,7 @@ Environment="PYTHONUNBUFFERED=1"
 Type=simple
 User=riego
 WorkingDirectory=/mnt/usb1/riego
-ExecStart=/mnt/usb1/riego/.venv/bin/riego_service
+ExecStart=/mnt/usb1/riego/.venv/bin/riego
 Restart=always
 RestartSec=3s
 
