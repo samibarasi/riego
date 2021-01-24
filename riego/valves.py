@@ -147,25 +147,35 @@ class Valve():
         await riego.web.websockets.send_to_all(ret)
         return ret
 
-    async def _set_on_try(self):
+    async def _set_on_try(self)->bool:
         self.__is_running = -1
         with self.__db_conn:
             self.__db_conn.execute(
                 'UPDATE valves SET is_running = ?  WHERE id = ?',
                 (self.__is_running, self.__id))
         topic = self.__options.mqtt_cmnd_prefix + '/' + self.__topic
-        self.__mqtt.client.publish(topic, 1)
         await self.send_status_with_websocket('is_running', -1)
+        if self.__mqtt.client is None:
+            return False
+        if not self.__mqtt.client.is_connected:
+            return False
+        self.__mqtt.client.publish(topic, 1)
+        return True
 
-    async def _set_off_try(self):
+    async def _set_off_try(self)->bool:
         self.__is_running = -1
         with self.__db_conn:
             self.__db_conn.execute(
                 'UPDATE valves SET is_running = ?  WHERE id = ?',
                 (self.__is_running, self.__id))
+        await self.send_status_with_websocket('is_running', -1)
+        if self.__mqtt.client is None:
+            return False
+        if not self.__mqtt.client.is_connected:
+            return False
         topic = self.__options.mqtt_cmnd_prefix + '/' + self.__topic
         self.__mqtt.client.publish(topic, 0)
-        await self.send_status_with_websocket('is_running', -1)
+        return True
 
     async def _set_on_confirm(self):
         self.__is_running = 1
