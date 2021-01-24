@@ -21,7 +21,10 @@ class Timer():
         v = self._valves.get_next()
         while True:
             try:
-                if v.is_running:
+                if v.is_running == -1:
+                    await v.set_is_running(0)
+                    await asyncio.sleep(1)
+                if v.is_running == 1:
                     if self._options.enable_timer_dev_mode:
                         td = timedelta(minutes=0, seconds=v.duration)
                     else:
@@ -33,7 +36,7 @@ class Timer():
                         self._log.debug("valveOff " + v.name)
                     else:
                         pass
-                else:
+                if v.is_running == 0:
                     if self._options.enable_timer_dev_mode:
                         td = timedelta(days=0, seconds=v.interval)
                     else:

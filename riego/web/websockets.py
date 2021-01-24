@@ -27,9 +27,6 @@ async def send_to_all(msg: dict) -> None:
 def subscribe(model: str, callback) -> None:
     """Install a callback function for given model. 
 
-    Blödsinn: Eacch message
-    should contain a json data like this: {model: <model_name>}
-
     :param model: name of data model that asks for websocket
     :type model: str
     :param callback: callback function that is called when data arrives

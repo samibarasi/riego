@@ -147,7 +147,7 @@ class Valve():
         await riego.web.websockets.send_to_all(ret)
         return ret
 
-    async def _set_on_try(self)->bool:
+    async def _set_on_try(self) -> bool:
         self.__is_running = -1
         with self.__db_conn:
             self.__db_conn.execute(
@@ -162,7 +162,7 @@ class Valve():
         self.__mqtt.client.publish(topic, 1)
         return True
 
-    async def _set_off_try(self)->bool:
+    async def _set_off_try(self) -> bool:
         self.__is_running = -1
         with self.__db_conn:
             self.__db_conn.execute(
@@ -271,7 +271,7 @@ class Valves():
         Call setter-method of Class Valve according to msg['prop']
         """
         self.log.debug(f'In Valves._ws_handler: {msg}')
-        
+
         if not msg['action'] == 'update':
             return None
         valve = self.get_valve_by_id(msg['id'])
@@ -294,6 +294,9 @@ class Valves():
         for channel in payload:
             topic = box + '/' + channel
             valve = self.get_valve_by_topic(topic)
+            if valve is None:
+                self.log.error(f'valves._mqtt_result_handler: unknown topic: {topic}')
+                continue
             value = bool_to_int[payload[channel]]
             if value == 1:
                 await valve._set_on_confirm()
