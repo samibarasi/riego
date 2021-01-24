@@ -267,7 +267,7 @@ class Valves():
         return None
 
     async def _ws_handler(self, msg: dict):
-        """Find object from class valve with id=msg[id] and 
+        """Find object from class valve with id=msg[id] and
         Call setter-method of Class Valve according to msg['prop']
         """
         self.log.debug(f'In Valves._ws_handler: {msg}')

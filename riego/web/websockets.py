@@ -26,7 +26,7 @@ async def send_to_all(msg: dict) -> None:
 
 
 def subscribe(model: str, callback) -> None:
-    """Install a callback function for given model. 
+    """Install a callback function for given model.
 
     :param model: name of data model that asks for websocket
     :type model: str
