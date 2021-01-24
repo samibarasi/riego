@@ -8,36 +8,36 @@
 {%for valve in valves %}
 
 <div class="bg-light p-3 rounded">
-	<h3>{{valves[valve].name}}</h3>
-	<label for="valves_{{valve}}_duration" class="form-label">Dauer: {{valves[valve].duration}} Minuten</label>
-	<input type="range" class="form-range" min="0" max="90" id="valves_{{valve}}_duration" autocomplete="off"
-		value="{{valves[valve].duration}}"
-		onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'duration', value: this.value } ));"
-		oninput="this.previousElementSibling.innerHTML = 'Dauer: ' + this.value + ' Minuten';">
+    <h3>{{valves[valve].name}}</h3>
+    <label for="valves_{{valve}}_duration" class="form-label">Dauer: {{valves[valve].duration}} Minuten</label>
+    <input type="range" class="form-range" min="0" max="90" id="valves_{{valve}}_duration" autocomplete="off"
+        value="{{valves[valve].duration}}"
+        onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'duration', value: this.value } ));"
+        oninput="this.previousElementSibling.innerHTML = 'Dauer: ' + this.value + ' Minuten';">
 
-	<label for="valves_{{valve}}_interval" class="form-label">Intervall: {{valves[valve].interval}} Tage</label>
-	<input type="range" class="form-range" min="0" max="10" id="valves_{{valve}}_interval" autocomplete="off"
-		value="{{valves[valve].interval}}"
-		onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'interval', value: this.value } ));"
-		oninput="this.previousElementSibling.innerHTML = 'Intervall: ' + this.value + ' Tage';">
+    <label for="valves_{{valve}}_interval" class="form-label">Intervall: {{valves[valve].interval}} Tage</label>
+    <input type="range" class="form-range" min="0" max="10" id="valves_{{valve}}_interval" autocomplete="off"
+        value="{{valves[valve].interval}}"
+        onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'interval', value: this.value } ));"
+        oninput="this.previousElementSibling.innerHTML = 'Intervall: ' + this.value + ' Tage';">
 
 
-	<div class="row g-3">
-		<div class="col form-check form-switch">
-			<input class="form-check-input" type="checkbox" id="valves_{{valve}}_is_running" autocomplete="off" {% if
-				valves[valve].is_running==1 %} checked {% endif %}
-				onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'is_running', value: this.checked } ))">
-			<label class="form-check-label" for="valves_{{valve}}_is_running">Offen</label>
-		</div>
+    <div class="row g-3">
+        <div class="col form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="valves_{{valve}}_is_running" autocomplete="off" {% if
+                valves[valve].is_running==1 %} checked {% endif %}
+                onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'is_running', value: this.checked } ))">
+            <label class="form-check-label" for="valves_{{valve}}_is_running">Offen</label>
+        </div>
 
-		<div class="col form-check">
-			<input class="form-check-input" type="checkbox" value="" id="valves_{{valve}}_is_enabled" autocomplete="off"
-				{% if valves[valve].is_enabled==1 %} checked {% endif %}
-				onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'is_enabled', value: this.checked } ))">
-			<label class="form-check-label" for="valves_{{valve}}_is_enabled">Aktiviert</label>
-		</div>
-	</div>
-	{{valves[valve].last_run}}
+        <div class="col form-check">
+            <input class="form-check-input" type="checkbox" value="" id="valves_{{valve}}_is_enabled" autocomplete="off"
+                {% if valves[valve].is_enabled==1 %} checked {% endif %}
+                onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'is_enabled', value: this.checked } ))">
+            <label class="form-check-label" for="valves_{{valve}}_is_enabled">Aktiviert</label>
+        </div>
+    </div>
+    {{valves[valve].last_run}}
 </div>
 <p>&nbsp;</p>
 
@@ -45,39 +45,48 @@
 
 
 <div class="form-floating">
-	<textarea class="form-control" placeholder="Leave a comment here" autocomplete="off" id="floating_1_Textarea2"
-		style="height: 100px"></textarea>
-	<label for="floatingTextarea2">Comments</label>
+    <textarea class="form-control" placeholder="Leave a comment here" autocomplete="off" id="floating_1_Textarea2"
+        style="height: 100px"></textarea>
+    <label for="floatingTextarea2">Comments</label>
 </div>
 
 <script>
-	var wsUri = (window.location.protocol == 'https:' && 'wss://' || 'ws://') + window.location.host + "{{app.options.websocket_path}}";
-	ws = new WebSocket(wsUri);
+    var wsUri = (window.location.protocol == 'https:' && 'wss://' || 'ws://') + window.location.host + "{{app.options.websocket_path}}";
+    ws = new WebSocket(wsUri);
 
-	ws.onmessage = function (event) {
-		el = document.getElementById('floating_1_Textarea2');
-		el.value = event.data;
+    ws.onmessage = function (event) {
+        el_debug = document.getElementById('floating_1_Textarea2');
+        el_debug.value = event.data;
 
-		data = JSON.parse(event.data);
-		switch (data.action) {
-			case 'status':
-				dom_id = "valves_" + data.id + "_" + data.prop
-				el = document.getElementById(dom_id)
-				if (el.hasAttribute('value')) {
-					el.value = data.value;
-				}
-				if (el.hasAttribute('checked')) {
-					if (data.value == 1) {
-						el.checked = true;
-					} else { el.checked = false; }
-				}
-				break;
-			case 'tt':
-				break;
-			default:
-				break;
-		}
-	};
+        data = JSON.parse(event.data);
+        switch (data.action) {
+            case 'status':
+                dom_id = data.model + "_" + data.id + "_" + data.prop
+                el_debug.value = dom_id;
+                el = document.getElementById(dom_id)
+                if (data.value == -1) {
+                    el.disabled = true;
+                } else {
+                    el.disabled = false;
+                }
+                if (el.hasAttribute('value')) {
+                    el.value = data.value;
+                }
+                if (el.hasAttribute('checked')) {
+                    if (data.value == 1) {
+                        el.checked = true;
+                    } else {
+                        el.checked = false;
+                    }
+                }
+                break;
+            case 'reload':
+                location.reload(true);
+                break;
+            default:
+                break;
+        }
+    };
 </script>
 
 {% endblock %}

@@ -3,6 +3,10 @@ import json
 import riego.web.websockets
 import re
 
+bool_to_int = {'true': 1, 'false': 0, True: 1, False: 0,
+               'True': 1, 'False': 0, 'on': 1, 'off': 0,
+               'On': 1, 'Off': 0, 'ON': 1, 'OFF': 0}
+
 
 class Valve():
     def __init__(self, row, app):
@@ -10,10 +14,6 @@ class Valve():
         self.__mqtt = app['mqtt']
         self.__event_log = app['event_log']
         self.__options = app['options']
-
-        self.bool_to_int = {'true': 1, 'false': 0, True: 1, False: 0,
-                            'True': 1, 'False': 0, 'on': 1, 'off': 0,
-                            'On': 1, 'Off': 0, 'ON': 1, 'OFF': 0}
 
         self.__id = row['id']
         self.__name = row['name']
@@ -83,7 +83,7 @@ class Valve():
     def last_run(self):
         return self.__last_run
 
-    def set_last_run(self):
+    async def set_last_run(self):
         raise NotImplementedError
 
     @ property
@@ -91,27 +91,11 @@ class Valve():
         return self.__is_running
 
     async def set_is_running(self, val):
-        val = self.bool_to_int[val]
-        with self.__db_conn:
-            self.__db_conn.execute(
-                'UPDATE valves SET is_running = ?  WHERE id = ?',
-                (val, self.__id))
-        # TODO raise Execption if publish does not work
-        # Or async wait for result an decide what to do than
-        topic = self.__options.mqtt_cmnd_prefix + self.__topic
-        self.__mqtt.client.publish(topic, val)
-        self.__event_log.info(str(val) + ';' + self.name)
-        await self.send_status_with_websocket('is_running', val)
-        if val == 1:
-            self.__last_run = datetime.now()
-            with self.__db_conn:
-                self.__db_conn.execute(
-                    'UPDATE valves SET last_run = ?  WHERE id = ?',
-                    (self.__last_run, self.__id))
-            await self.send_status_with_websocket('last_run',
-                                                  str(self.__last_run))
-        self.__is_running = val
-        return True
+        val = bool_to_int[val]
+        if val:
+            await self._set_on_try()
+        else:
+            await self._set_off_try()
 
     @ property
     def is_enabled(self):
@@ -163,6 +147,50 @@ class Valve():
         await riego.web.websockets.send_to_all(ret)
         return ret
 
+    async def _set_on_try(self):
+        self.__is_running = -1
+        with self.__db_conn:
+            self.__db_conn.execute(
+                'UPDATE valves SET is_running = ?  WHERE id = ?',
+                (self.__is_running, self.__id))
+        topic = self.__options.mqtt_cmnd_prefix + '/' + self.__topic
+        self.__mqtt.client.publish(topic, 1)
+        await self.send_status_with_websocket('is_running', -1)
+
+    async def _set_off_try(self):
+        self.__is_running = -1
+        with self.__db_conn:
+            self.__db_conn.execute(
+                'UPDATE valves SET is_running = ?  WHERE id = ?',
+                (self.__is_running, self.__id))
+        topic = self.__options.mqtt_cmnd_prefix + '/' + self.__topic
+        self.__mqtt.client.publish(topic, 0)
+        await self.send_status_with_websocket('is_running', -1)
+
+    async def _set_on_confirm(self):
+        self.__is_running = 1
+        with self.__db_conn:
+            self.__db_conn.execute(
+                'UPDATE valves SET is_running = ?  WHERE id = ?',
+                (self.__is_running, self.__id))
+        await self.send_status_with_websocket('is_running', 1)
+
+        self.__last_run = datetime.now()
+        with self.__db_conn:
+            self.__db_conn.execute(
+                'UPDATE valves SET last_run = ?  WHERE id = ?',
+                (self.__last_run, self.__id))
+        await self.send_status_with_websocket('last_run',
+                                              str(self.__last_run))
+
+    async def _set_off_confirm(self):
+        self.__is_running = 0
+        with self.__db_conn:
+            self.__db_conn.execute(
+                'UPDATE valves SET is_running = ?  WHERE id = ?',
+                (self.__is_running, self.__id))
+        await self.send_status_with_websocket('is_running', 0)
+
 
 class Valves():
     def __init__(self, app):
@@ -190,7 +218,13 @@ class Valves():
             self.idx_valves = 0
         return self._valves[self.idx_valves]
 
-    def get_dict(self):
+    def get_dict_of_all(self) -> dict:
+        """Create dict of properties and value from all
+        objects of valves. used for updating HTML-page
+
+        :return: dict with all properties of all valves
+        :rtype: dict
+        """
         ret = {}
         for v in self._valves:
             ret[v.id] = v.get_dict()
@@ -223,8 +257,11 @@ class Valves():
         return None
 
     async def _ws_handler(self, msg: dict):
-        """Call method from Object Valves according to msg['prop']
+        """Find object from class valve with id=msg[id] and 
+        Call setter-method of Class Valve according to msg['prop']
         """
+        self.log.debug(f'In Valves._ws_handler: {msg}')
+        
         if not msg['action'] == 'update':
             return None
         valve = self.get_valve_by_id(msg['id'])
@@ -232,15 +269,24 @@ class Valves():
         await func(msg['value'])
 
     async def _mqtt_result_handler(self, topic: str, payload: str) -> bool:
-        #        print(f'Topic: {topic}, payload: {payload}')
-        box = re.search('/(.*?)/', topic).group(1)
+        """Dispatch mqtt message "stat/box_name/RESULT {POWER1 :  ON}"
 
-        p_dict = json.loads(payload)
-        print(type(p_dict))
-        for key in p_dict:
-            topic = box + '/' + key
-#            print(f'key: {key}, value: {p_dict[key]}')
-#            print(f'topic: topic, value: {p_dict[key]}')
+
+        :param topic: Topic of subscribed MQTT-message
+        :type topic: str
+        :param payload: Payload of subscribed MQTT-message
+        :type payload: str
+        :return: [description]
+        :rtype: bool
+        """
+        box = re.search('/(.*?)/', topic).group(1)
+        payload = json.loads(payload)
+        for channel in payload:
+            topic = box + '/' + channel
             valve = self.get_valve_by_topic(topic)
-            print (valve.name)
+            value = bool_to_int[payload[channel]]
+            if value == 1:
+                await valve._set_on_confirm()
+            else:
+                await valve._set_off_confirm()
         return True

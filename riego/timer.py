@@ -40,7 +40,7 @@ class Timer():
                         td = timedelta(days=v.interval)
 
                     if (datetime.now() - v.last_run > td and v.is_enabled and
-                       self.is_running_period()):
+                       await self.is_running_period()):
                         # Intervall erreicht
                         await v.set_is_running(1)
                         self._log.debug("valveOn " + v.name)
@@ -54,7 +54,7 @@ class Timer():
         self._log.debug("Timer: shutdown valve")
         await v.set_is_running(0)
 
-    def is_running_period(self) -> bool:
+    async def is_running_period(self) -> bool:
         if self._running_period_start is None:
             self._running_period_start = datetime.now().replace(
                 hour=self._start_hour, minute=self._start_minute)

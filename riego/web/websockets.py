@@ -22,7 +22,9 @@ async def send_to_all(msg: dict) -> None:
 
 
 def subscribe(model: str, callback) -> None:
-    """Install a callback function for given model. Eacch message
+    """Install a callback function for given model. 
+
+    Blödsinn: Eacch message
     should contain a json data like this: {model: <model_name>}
 
     :param model: name of data model that asks for websocket
@@ -48,16 +50,32 @@ async def _ws_handler(request) -> web.WebSocketResponse:
 
     try:
         async for msg in ws:
+            print(msg)
             if msg.type == web.WSMsgType.TEXT:
                 msg = json.loads(msg.data)
-                # Callback function from data Model (yet only 'valves')
-                func = __subscriptions.get(msg['model'], lambda x: None)
-                await func(msg)
-
+                await dispatch_message(msg)
     finally:
+        print(f'Finally ws remove: {ws}')
         __ws_list.remove(ws)
     return ws
 
+
+async def dispatch_message(msg: dict) -> bool:
+    global __subscriptions
+    model = msg.get('model', None)
+    if model is None:
+        print(f'Message not for a data model: {msg}')
+        return False
+    callback_func = __subscriptions.get(model, None)
+    if callback_func is None:
+        print(f'Message for an unknown data model: {msg}')
+        return False
+    try:
+        await callback_func(msg)
+    except Exception as e:
+        print(f'websocket.py, exeption {e} in callable {callback_func}')
+        return False
+    return True
 
 async def _my_shutdown(app) -> None:
     for ws in __ws_list:
