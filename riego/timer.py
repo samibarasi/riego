@@ -22,8 +22,7 @@ class Timer():
         while True:
             try:
                 if v.is_running == -1:
-                    await v.set_is_running(0)
-                    await asyncio.sleep(1)
+                    continue
                 if v.is_running == 1:
                     if self._options.enable_timer_dev_mode:
                         td = timedelta(minutes=0, seconds=v.duration)
