@@ -65,9 +65,7 @@
             case 'status':
                 
                 dom_id = data.model + "_" + data.id + "_" + data.prop
-                console.log(dom_id)
                 el = document.getElementById(dom_id)
-                console.log(el)
                 if (data.value == -1) {
                     el.disabled = true;
                 } else {
@@ -79,6 +77,7 @@
                 if (el.checked !== "undefined") {
                     el.checked = data.value
                 }
+                
                 break;
             case 'reload':
                 location.reload(true);

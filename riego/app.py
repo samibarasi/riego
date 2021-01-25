@@ -5,6 +5,7 @@ import os
 import pathlib
 # import logging
 import sys
+import socket
 
 import riego.database
 import riego.valves
@@ -51,9 +52,9 @@ async def on_cleanup(app):
 
 def main():
     p = configargparse.ArgParser(
-        default_config_files=['/etc/riego/conf.d/*.conf', '~/.riego.conf'])
+        default_config_files=['/etc/riego/conf.d/*.conf', '~/.riego.conf', 'riego.conf'])
     p.add('-c', '--config', is_config_file=True, env_var='RIEGO_CONF',
-          default='riego.conf', help='config file path')
+          required=False, help='config file path')
     p.add('-d', '--database', help='Path and name for DB file',
           default='db/riego.db')
     p.add('-e', '--event_log', help='Full path and name for event logfile',
@@ -67,7 +68,7 @@ def main():
     p.add('-p', '--mqtt_port', help='Port of mqtt service',
           default=1883, type=int)
     p.add('--mqtt_client_id', help='Client ID for MQTT-Connection',
-          default='riego_controler')
+          default=f'riego_ctrl_{socket.gethostname()}')
     p.add('--mqtt_subscription_topic', help='MQTT Topic that we are listening',
           default='riego/#')
     p.add('--database_migrations_dir',
@@ -119,6 +120,13 @@ def main():
 
     options = p.parse_args()
 
+    try:
+        with open('riego.conf', 'xt') as f:
+            for item in vars(options):
+                f.write(f'# {item}={getattr(options, item)}\n')
+    except IOError:
+        pass
+    
     if options.defaults:
         for item in vars(options):
             print(f'# {item}={getattr(options, item)}')
