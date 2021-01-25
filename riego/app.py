@@ -4,7 +4,7 @@ import pkg_resources
 import os
 import pathlib
 # import logging
-import sys
+# import sys
 import socket
 
 import riego.database
@@ -52,7 +52,8 @@ async def on_cleanup(app):
 
 def main():
     p = configargparse.ArgParser(
-        default_config_files=['/etc/riego/conf.d/*.conf', '~/.riego.conf', 'riego.conf'])
+        default_config_files=['/etc/riego/conf.d/*.conf', '~/.riego.conf',
+                              'riego.conf'])
     p.add('-c', '--config', is_config_file=True, env_var='RIEGO_CONF',
           required=False, help='config file path')
     p.add('-d', '--database', help='Path and name for DB file',
@@ -126,7 +127,7 @@ def main():
                 f.write(f'# {item}={getattr(options, item)}\n')
     except IOError:
         pass
-    
+
     if options.defaults:
         for item in vars(options):
             print(f'# {item}={getattr(options, item)}')
@@ -140,7 +141,7 @@ def main():
         print(p.format_values())
 
 #    if sys.version_info >= (3, 8):
-#        asyncio.DefaultEventLoopPolicy = asyncio.WindowsSelectorEventLoopPolicy
+#        asyncio.DefaultEventLoopPolicy = asyncio.WindowsSelectorEventLoopPolicy  # noqa: E501
 
     if os.name == "posix":
         import uvloop  # pylint: disable=import-error

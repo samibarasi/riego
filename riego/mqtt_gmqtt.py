@@ -25,7 +25,7 @@ class Mqtt:
 
     async def _on_message(self, client, topic, payload, qos, properties):
         payload = payload.decode()
-        self._log.debug(f'MQTT RECV MSG: {payload}, TOPIC: {topic}')
+#        self._log.debug(f'MQTT RECV MSG: {payload}, TOPIC: {topic}')
         for key in self.subscriptions:
             if self.match_topic(topic, key):
                 func = self.subscriptions[key]

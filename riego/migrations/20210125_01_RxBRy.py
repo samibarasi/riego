@@ -63,7 +63,7 @@ steps = [
         "DELETE FROM parameter WHERE key = 'startTime'"
     ),
     step(
-        "INSERT INTO parameter (key,value) VALUES ('maxDuration', '4')",
+        "INSERT INTO parameter (key,value) VALUES ('maxDuration', '240')",
         "DELETE FROM parameter WHERE key = 'maxDuration'"
     ),
     step(

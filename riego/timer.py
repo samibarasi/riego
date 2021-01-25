@@ -9,7 +9,7 @@ class Timer():
         self._options = app['options']
         self._log = app['log']
 
-        self._maxDuration = self._parameter.get('maxDuration')
+        self._maxDuration = int(self._parameter.get('maxDuration'))
         self._start_hour, self._start_minute = self._parameter.get(
             'startTime').split(':')
         self._start_hour = int(self._start_hour)
@@ -48,7 +48,7 @@ class Timer():
                         td = timedelta(days=v.interval)
 
                     if (datetime.now() - v.last_run > td and v.is_enabled and
-                       await self.is_running_period()):
+                            await self.is_running_period()):
                         # Intervall erreicht
                         await v.set_is_running(1)
                         self._log.debug("valveOn " + v.name)
@@ -64,6 +64,7 @@ class Timer():
             await v.set_is_running(0)
 
     async def is_running_period(self) -> bool:
+        print("in function is_running_period")
         if self._running_period_start is None:
             self._running_period_start = datetime.now().replace(
                 hour=self._start_hour, minute=self._start_minute)
@@ -74,10 +75,10 @@ class Timer():
 
         if self._running_period_end is None:
             self._running_period_end = self._running_period_start + \
-                timedelta(minutes=int(self._maxDuration))
+                timedelta(minutes=self._maxDuration)
 
         if datetime.now() > self._running_period_end:
             self._running_period_start = None
             return False
-
+        print("is running period")
         return True
