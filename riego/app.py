@@ -108,20 +108,29 @@ def main():
     p.add('--mqtt_keyword_OFF', help='',
           default="OFF")
 
-    p.add('-v', '--verbose', help='verbose', action='store_true')
-    p.add('--version', help='Print version', action='store_true')
     p.add('--enable_aiohttp_debug_toolbar', action='store_true')
     p.add('--enable_asyncio_debug', action='store_true')
     p.add('--enable_timer_dev_mode', action='store_true')
 
+    p.add('-v', '--verbose', help='verbose', action='store_true')
+    p.add('--version', help='Print version and exit', action='store_true')
+    p.add('--defaults', help='Print options with default values and exit',
+          action='store_true')
+
     options = p.parse_args()
 
-    if options.verbose:
-        print(p.format_values())
+    if options.defaults:
+        for item in vars(options):
+            print(f'# {item}={getattr(options, item)}')
+        
+        exit(0)
 
     if options.version:
         print('Version: ', __version__)
-        os.sys.exit()
+        exit(0)
+
+    if options.verbose:
+        print(p.format_values())
 
     if sys.version_info >= (3, 8):
         asyncio.DefaultEventLoopPolicy = asyncio.WindowsSelectorEventLoopPolicy
