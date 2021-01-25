@@ -86,6 +86,8 @@ def main():
           default=pkg_resources.resource_filename('riego.web', 'templates'))
     p.add('--websocket_path', help='url path for websocket',
           default="/ws")
+    p.add('--time_format', help='Store and display time',
+          default="%Y-%m-%d %H:%M:%S")          
     p.add('--mqtt_cmnd_prefix', help='',
           default="cmnd")
     p.add('--mqtt_result_subscription', help='',

@@ -80,8 +80,13 @@ class Valve():
         self.__interval = val
 
     @ property
-    def last_run(self):
-        return self.__last_run
+    def last_run(self) -> datetime:
+        """Convert to datetime object before return
+
+        :return: Last ON-Time of valve
+        :rtype: datetime
+        """
+        return datetime.strptime(self.__last_run, self.__options.time_format)
 
     async def set_last_run(self):
         raise NotImplementedError
@@ -129,7 +134,7 @@ class Valve():
                'topic': self.__topic,
                'duration': self.__duration,
                'interval': self.__interval,
-               'last_run': str(self.__last_run),
+               'last_run': self.__last_run,
                'is_running': self.__is_running,
                'is_enabled': self.__is_enabled,
                'remark': self.__remark}
@@ -185,13 +190,12 @@ class Valve():
                 (self.__is_running, self.__id))
         await self.send_status_with_websocket('is_running', 1)
 
-        self.__last_run = datetime.now()
+        self.__last_run = datetime.now().strftime(self.__options.time_format)
         with self.__db_conn:
             self.__db_conn.execute(
                 'UPDATE valves SET last_run = ?  WHERE id = ?',
                 (self.__last_run, self.__id))
-        await self.send_status_with_websocket('last_run',
-                                              str(self.__last_run))
+        await self.send_status_with_websocket('last_run', self.__last_run)
 
     async def _set_off_confirm(self):
         self.__is_running = 0
