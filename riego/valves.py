@@ -7,6 +7,8 @@ bool_to_int = {'true': 1, 'false': 0, True: 1, False: 0,
                'True': 1, 'False': 0, 'on': 1, 'off': 0,
                'On': 1, 'Off': 0, 'ON': 1, 'OFF': 0}
 
+int_to_js_bool = {1: "true", 0: "false", -1: "-1"}
+
 
 class Valve():
     def __init__(self, row, app):

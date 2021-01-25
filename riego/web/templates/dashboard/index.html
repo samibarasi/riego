@@ -24,8 +24,8 @@
 
     <div class="row g-3">
         <div class="col form-check form-switch">
-            <input class="form-check-input" type="checkbox" id="valves_{{valve}}_is_running" autocomplete="off" {% if
-                valves[valve].is_running==1 %} checked {% endif %}
+            <input class="form-check-input" type="checkbox" id="valves_{{valve}}_is_running" autocomplete="off" 
+            {% if valves[valve].is_running==1 %} checked {% endif %}
                 onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'is_running', value: this.checked } ))">
             <label class="form-check-label" for="valves_{{valve}}_is_running">Offen</label>
         </div>
@@ -37,7 +37,9 @@
             <label class="form-check-label" for="valves_{{valve}}_is_enabled">Aktiviert</label>
         </div>
     </div>
-    {{valves[valve].last_run}}
+    <label class="form-check-label" id="valves_{{valve}}_last_run">{{valves[valve].last_run}}</label>
+
+    
 </div>
 <p>&nbsp;</p>
 
@@ -61,9 +63,11 @@
         data = JSON.parse(event.data);
         switch (data.action) {
             case 'status':
+                
                 dom_id = data.model + "_" + data.id + "_" + data.prop
-                el_debug.value = dom_id;
+                console.log(dom_id)
                 el = document.getElementById(dom_id)
+                console.log(el)
                 if (data.value == -1) {
                     el.disabled = true;
                 } else {
@@ -72,12 +76,8 @@
                 if (el.hasAttribute('value')) {
                     el.value = data.value;
                 }
-                if (el.hasAttribute('checked')) {
-                    if (data.value == 1) {
-                        el.checked = true;
-                    } else {
-                        el.checked = false;
-                    }
+                if (el.checked !== "undefined") {
+                    el.checked = data.value
                 }
                 break;
             case 'reload':
