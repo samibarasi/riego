@@ -30,6 +30,7 @@ async def on_startup(app):
     if app['options'].enable_asyncio_debug:
         asyncio.get_event_loop().set_debug(True)
     app['log'].info("on_startup")
+# TODO bring next two lines to correspondending classes
     app['background_mqtt'] = asyncio.create_task(app['mqtt'].start_async())
     app['background_timer'] = asyncio.create_task(app['timer'].start_async())
 
@@ -87,7 +88,7 @@ def main():
     p.add('--websocket_path', help='url path for websocket',
           default="/ws")
     p.add('--time_format', help='Store and display time',
-          default="%Y-%m-%d %H:%M:%S")          
+          default="%Y-%m-%d %H:%M:%S")
     p.add('--mqtt_cmnd_prefix', help='',
           default="cmnd")
     p.add('--mqtt_result_subscription', help='',

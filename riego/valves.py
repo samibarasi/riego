@@ -17,13 +17,15 @@ class Valve():
 
         self.__id = row['id']
         self.__name = row['name']
-        self.__topic = row['topic']
+        self.__remark = row['remark']
+        self.__box = row['box']
+        self.__channel = row['channel']
+        self.__topic = row['box'] + "/" + row['channel']
         self.__duration = row['duration']
         self.__interval = row['interval']
         self.__last_run = row['last_run']
         self.__is_running = row['is_running']
         self.__is_enabled = row['is_enabled']
-        self.__remark = row['remark']
 
     @ property
     def id(self):
@@ -45,13 +47,8 @@ class Valve():
     def topic(self):
         return self.__topic
 
-    async def set_topic(self, val: str):
-        with self.__db_conn:
-            self.__db_conn.execute(
-                'UPDATE valves SET topic = ?  WHERE id = ?',
-                (val, self.__id))
-        await self.send_status_with_websocket('topic', val)
-        self.__topic = val
+    async def set_topic(self, val) -> NotImplementedError:
+        raise NotImplementedError
 
     @ property
     def duration(self):
@@ -107,7 +104,7 @@ class Valve():
         return self.__is_enabled
 
     async def set_is_enabled(self, val):
-        val = self.bool_to_int[val]
+        val = bool_to_int[val]
 
         with self.__db_conn:
             self.__db_conn.execute(
@@ -215,10 +212,12 @@ class Valves():
 
         self._valves = []
         self.idx_valves = -1
-        for row in db_conn.execute('select * from valves'):
+        sql = '''select valves.*, boxes.name as box 
+            from valves, boxes 
+            where valves.box_id = boxes.id'''
+        for row in db_conn.execute(sql):
             v = Valve(row, app)
             self._valves.append(v)
-
 # TODO Dependenca Injection for websockets.
         riego.web.websockets.subscribe('valves', self._ws_handler)
         mqtt.subscribe(self.options.mqtt_result_subscription,
