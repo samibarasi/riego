@@ -18,14 +18,17 @@ class Valve():
         self.__id = row['id']
         self.__name = row['name']
         self.__remark = row['remark']
-        self.__box = row['box']
+
         self.__channel = row['channel']
-        self.__topic = row['box'] + "/" + row['channel']
+        self.__topic = row['box_topic'] + "/" + row['channel']
         self.__duration = row['duration']
         self.__interval = row['interval']
         self.__last_run = row['last_run']
         self.__is_running = row['is_running']
         self.__is_enabled = row['is_enabled']
+
+        self.__box_display_name = row['box_display_name']
+        self.__box_id = row['box_id']
 
     @ property
     def id(self):
@@ -212,9 +215,12 @@ class Valves():
 
         self._valves = []
         self.idx_valves = -1
-        sql = '''select valves.*, boxes.name as box 
-            from valves, boxes 
-            where valves.box_id = boxes.id'''
+        sql = '''SELECT valves.*, 
+            boxes.id AS box_id,
+            boxes.topic AS box_topic,
+            boxes.display_name AS box_display_name
+            FROM valves, boxes 
+            WHERE valves.box_id = boxes.id;'''
         for row in db_conn.execute(sql):
             v = Valve(row, app)
             self._valves.append(v)

@@ -21,7 +21,13 @@ class Timer():
         v = self._valves.get_next()
         while True:
             try:
+                if v is None:
+                    # No valves in database found, system is initalizing
+                    await asyncio.sleep(2)
+                    v = self._valves.get_next()
+                    continue
                 if v.is_running == -1:
+                    v = self._valves.get_next()
                     continue
                 if v.is_running == 1:
                     if self._options.enable_timer_dev_mode:
@@ -54,7 +60,8 @@ class Timer():
                 self._log.debug("Timer: trapped cancel")
                 break
         self._log.debug("Timer: shutdown valve")
-        await v.set_is_running(0)
+        if v is not None:
+            await v.set_is_running(0)
 
     async def is_running_period(self) -> bool:
         if self._running_period_start is None:
