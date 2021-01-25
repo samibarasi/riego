@@ -27,6 +27,7 @@ class Timer():
                     v = self._valves.get_next()
                     continue
                 if v.is_running == -1:
+                    await asyncio.sleep(2)
                     v = self._valves.get_next()
                     continue
                 if v.is_running == 1:
@@ -64,7 +65,6 @@ class Timer():
             await v.set_is_running(0)
 
     async def is_running_period(self) -> bool:
-        print("in function is_running_period")
         if self._running_period_start is None:
             self._running_period_start = datetime.now().replace(
                 hour=self._start_hour, minute=self._start_minute)
@@ -80,5 +80,5 @@ class Timer():
         if datetime.now() > self._running_period_end:
             self._running_period_start = None
             return False
-        print("is running period")
+
         return True
