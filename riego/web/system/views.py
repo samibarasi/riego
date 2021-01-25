@@ -12,13 +12,12 @@ from pkg_resources import packaging
 
 @aiohttp_jinja2.template('system/index.html')
 async def system_index(request):
-    text = ''
     installed_version = await _check_installed()
     if not packaging.version.parse(installed_version) == packaging.version.parse(__version__):  # noqa: E501
-        text = 'Diese Riego Instanz läuft in der Version {} und entspricht nicht der installierten Version {}.'  # noqa: E501
+        text = '''Diese Riego Instanz läuft in der Version {}
+                und entspricht nicht der installierten Version {}.'''  # noqa: E501
         text = text.format(__version__, installed_version)
 
-    #    return web.Response(text="Hello, world")
     return {'text': text}
 
 
@@ -55,7 +54,8 @@ async def system_exc(request):
     raise NotImplementedError
 
 
-async def _check_installed(version=None):
+async def _check_installed():
+    version = "0.0.0"
     proc = await asyncio.create_subprocess_exec(
         sys.executable, '-m', 'pip', 'list', "--format=json",
         "--disable-pip-version-check",

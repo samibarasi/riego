@@ -122,7 +122,6 @@ def main():
     if options.defaults:
         for item in vars(options):
             print(f'# {item}={getattr(options, item)}')
-        
         exit(0)
 
     if options.version:
@@ -132,8 +131,8 @@ def main():
     if options.verbose:
         print(p.format_values())
 
-    if sys.version_info >= (3, 8):
-        asyncio.DefaultEventLoopPolicy = asyncio.WindowsSelectorEventLoopPolicy
+#    if sys.version_info >= (3, 8):
+#        asyncio.DefaultEventLoopPolicy = asyncio.WindowsSelectorEventLoopPolicy
 
     if os.name == "posix":
         import uvloop  # pylint: disable=import-error
