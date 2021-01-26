@@ -13,6 +13,7 @@ from pkg_resources import packaging
 @aiohttp_jinja2.template('system/index.html')
 async def system_index(request):
     installed_version = await _check_installed()
+    text = ""
     if not packaging.version.parse(installed_version) == packaging.version.parse(__version__):  # noqa: E501
         text = '''Diese Riego Instanz läuft in der Version {}
                 und entspricht nicht der installierten Version {}.'''  # noqa: E501
