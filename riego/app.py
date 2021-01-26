@@ -155,6 +155,7 @@ def main():
     app['event_log'] = riego.logger.create_event_log(options)
     app['db'] = riego.database.Database(app)
     app['mqtt'] = riego_mqtt.Mqtt(app)
+# boxes evtl. vor den Valves starten => MQTT -LWT nachrichten
     app['valves'] = riego.valves.Valves(app)
     app['parameter'] = riego.parameter.Parameter(app)
     app['timer'] = riego.timer.Timer(app)

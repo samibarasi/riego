@@ -191,6 +191,7 @@ class Valve():
                 'UPDATE valves SET is_running = ?  WHERE id = ?',
                 (self.__is_running, self.__id))
         await self.send_status_with_websocket('is_running', 1)
+        self.__event_log.info(f'{self.__name}: ON')
 
         self.__last_run = datetime.now().strftime(self.__options.time_format)
         with self.__db_conn:
@@ -206,6 +207,7 @@ class Valve():
                 'UPDATE valves SET is_running = ?  WHERE id = ?',
                 (self.__is_running, self.__id))
         await self.send_status_with_websocket('is_running', 0)
+        self.__event_log.info(f'{self.__name}: OFF')
 
 
 class Valves():
