@@ -75,6 +75,16 @@ body {
         </nav>
 
         <main>
+            {% if alert %}
+            <div class="alert {{alert.class}} alert-dismissible fade show" role="alert">
+                {% if alert.heading %}
+                <h4 class="alert-heading">{{alert.heading}}</h4>
+                {% endif %}
+                <p>{{alert.text}}</p>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+            
             {% block content%}
             <h1>{{title}}</h1>
             {% endblock %}

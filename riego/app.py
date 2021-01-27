@@ -57,11 +57,13 @@ async def on_cleanup(app):
     await app['background_mqtt']
 
 
-async def notify_ctx_processor(request: web.Request) -> Dict[str, Any]:
+async def alert_ctx_processor(request: web.Request) -> Dict[str, Any]:
     # Jinja2 context processor
     session = await get_session(request)
-    notify = session.get("notify")
-    return {"notify": notify}
+    alert = session.get("alert")
+    session['alert'] = None
+    session.changed()
+    return {"alert": alert}
 
 
 def main():
@@ -179,7 +181,6 @@ def main():
     app['parameter'] = riego.parameter.Parameter(app)
     app['timer'] = riego.timer.Timer(app)
 
-    # secret_key must be 32 url-safe base64-encoded bytes
     fernet_key = fernet.Fernet.generate_key()
     secret_key = base64.urlsafe_b64decode(fernet_key)
     setup_session(app, EncryptedCookieStorage(secret_key))
@@ -187,7 +188,7 @@ def main():
     loader = jinja2.FileSystemLoader(options.http_server_template_dir)
     aiohttp_jinja2.setup(app,
                          loader=loader,
-                         context_processors=[notify_ctx_processor],
+                         # context_processors=[alert_ctx_processor],
                          )
 
     setup_routes(app)

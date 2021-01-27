@@ -29,6 +29,7 @@ async def new_box_apply(request: web.Request) -> Dict[str, Any]:
         raise web.HTTPSeeOther(location="/boxes/new")
     else:
         raise web.HTTPSeeOther(location=f"/boxes/{item_id}")
+    return {}
 
 
 @router.get("/boxes/{item_id}")
@@ -62,6 +63,7 @@ async def edit_box_apply(request: web.Request) -> web.Response:
         raise web.HTTPSeeOther(location=f"/boxes/{item_id}")
     else:
         raise web.HTTPSeeOther(location=f"/boxes/{item_id}/edit")
+    return {}
 
 
 @router.get("/boxes/{item_id}/delete")
@@ -70,6 +72,7 @@ async def delete_box(request: web.Request) -> web.Response:
     item_id = request.match_info["item_id"]
     await boxes.delete(item_id)
     raise web.HTTPSeeOther(location="/boxes")
+    return {}
 
 
 def register_router(app):
