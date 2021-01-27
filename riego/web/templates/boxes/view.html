@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% set title = "Riego - Ventilboxen" %}
+{% set active_menu = "boxes" %}
+
+
+{% block content %}
+<h1>{{ item['display_name'] }}</h1>
+<ul>
+	<li>topic: {{item['topic']}}</li>
+	<li>hostname: {{item['hostname']}}</li>
+	<li>display_name: {{item['display_name']}}</li>
+	<li>remark: {{item['remark']}}</li>
+	<li>first_seen: {{item['first_seen']}}</li>
+	<li>has_config: {{item['has_config']}}</li>
+	<li>online_since: {{item['online_since']}}</li>
+	<li>hw_type: {{item['hw_type']}}</li>
+	<li>hw_version: {{item['hw_version']}}</li>
+	<li>sw_version: {{item['sw_version']}}</li>
+	<li>fallback_topic: {{item['fallback_topic']}}</li>
+	<li>group_topic: {{item['group_topic']}}</li>
+	<li>ip_address: {{item['ip_address']}}</li>
+</ul>
+
+<p>
+    <a href="/boxes">list</a> 
+    <a href="/boxes/{{ item['id'] }}/edit">edit</a>
+</p>
+{% endblock %}

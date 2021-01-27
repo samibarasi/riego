@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% set title = "Riego - Ventilboxen" %}
+{% set active_menu = "boxes" %}
+
+
+{% block content %}
+<h1>Items</h1>
+<p>
+  <ul>
+    {% for item in items %}
+    <li>
+      <a href="/boxes/{{ item['id'] }}">{{ item['display_name'] }}</a> {{ item['topic'] }}
+    </li>
+    {% endfor %}
+  </ul>
+</p>
+<hr>
+<p>
+  <a href="/boxes/new">New</a> 
+</p>
+
+{% endblock %}

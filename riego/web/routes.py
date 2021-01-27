@@ -1,6 +1,7 @@
 from riego.web.dashboard.views import dashboard_index
 from riego.web.system.views import system_index, system_check_update, system_do_update, system_restart, system_setup, system_event_log, system_exc
 
+import riego.web.boxes.views
 
 routes = [
     ('GET', '/',                    dashboard_index,      'dashboard_index'),
@@ -22,3 +23,5 @@ def setup_routes(app):
 
     app.router.add_static('/static', app['options'].http_server_static_dir,
                           name='static', show_index=True)
+
+    riego.web.boxes.views.register_router(app)

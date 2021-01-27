@@ -1,7 +1,8 @@
 from datetime import datetime
 import re
 import json
-from sqlite3 import IntegrityError
+from sqlite3 import IntegrityError, Row
+from typing import Any, Dict
 
 
 class Boxes():
@@ -44,3 +45,70 @@ class Boxes():
     async def _mqtt_info_handler(self, topic: str, payload: str) -> bool:
         self._log.debug(f'Info: {topic}, payload: {payload}')
         return True
+
+    async def insert(self, item: dict) -> bool:
+        try:
+            with self._db_conn:
+                cursor = self._db_conn.execute(
+                    ''' INSERT INTO boxes
+                    (topic, display_name, remark)
+                    VALUES (?, ?, ?) ''',
+                    (item['topic'], item['display_name'], item['remark']))
+        except IntegrityError:
+            ret = None
+        else:
+            ret = cursor.lastrowid
+        return ret
+
+    async def update(self, item_id: int, item: dict) -> bool:
+        ret = True
+        try:
+            with self._db_conn:
+                self._db_conn.execute(
+                    ''' UPDATE boxes
+                        SET display_name = ?, remark = ?
+                        WHERE id = ? ''',
+                    (item['display_name'], item['remark'], item_id))
+        except IntegrityError:
+            ret = False
+        return ret
+
+    async def delete(self, item_id: int) -> None:
+        try:
+            with self._db_conn:
+                self._db_conn.execute(
+                    'DELETE FROM boxes WHERE id = ?',
+                    (item_id,))
+        except IntegrityError:
+            pass
+        return None
+
+    async def fetch_one_by_key(self, key: str, value: Any) -> Row:
+        c = self._db_conn.cursor()
+        sql = f'SELECT * FROM boxes WHERE {key}=?'
+        c.execute(sql, (value,))
+        ret = c.fetchone()
+        self._db_conn.commit()
+        return ret
+
+    async def fetch_one_by_id(self, item_id: int) -> Row:
+        c = self._db_conn.cursor()
+        c.execute('SELECT * FROM boxes WHERE id=?', (item_id,))
+        ret = c.fetchone()
+        self._db_conn.commit()
+        return ret
+
+    async def fetch_all(self) -> Row:
+        c = self._db_conn.cursor()
+        c.execute('SELECT * FROM boxes')
+        ret = c.fetchall()
+        self._db_conn.commit()
+        return ret
+
+    async def fetch_all_json(self) -> str:
+        c = self._db_conn.cursor()
+        c.execute('SELECT * FROM boxes')
+        ret = c.fetchall()
+        self._db_conn.commit()
+        ret = json.loads(ret)
+        return ret

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% set title = "Riego - Ventilboxen" %}
+{% set active_menu = "boxes" %}
+
+
+{% block content %}
+<h1>Edit: {{ item['display_name'] }}</h1>
+<form action="/boxes/{{ item['id'] }}/edit" method="POST"
+      enctype="multipart/form-data">
+
+
+      <div class="mb-3">
+        <label for="id2" class="form-label">Display name</label>
+        <input id="id2" name="display_name" value="{{item['display_name']}}"  type="text" class="form-control">
+      </div>
+
+
+
+      <div class="mb-3">
+        <label for="id3" class="form-label">Remark</label>
+        <input id="id3" name="remark" value="{{item['remark']}}"  type="text" class="form-control">
+      </div>
+
+
+  <input type="submit">
+</form>
+<hr>
+
+<p>
+  <a href="/boxes">list</a>
+  <a href="/boxes/{{ item['id'] }}">view</a>
+  <a href="/boxes/{{ item['id'] }}/delete">delete</a>
+</p>
+{% endblock %}
