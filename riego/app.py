@@ -6,6 +6,7 @@ import pathlib
 # import logging
 # import sys
 import socket
+from typing import Dict, Any
 
 import riego.database
 import riego.valves
@@ -23,6 +24,12 @@ from aiohttp import web
 import jinja2
 import aiohttp_jinja2
 import aiohttp_debugtoolbar
+
+import base64
+from cryptography import fernet
+from aiohttp_session import setup as setup_session, get_session
+from aiohttp_session.cookie_storage import EncryptedCookieStorage
+
 
 from riego.__init__ import __version__
 
@@ -48,6 +55,13 @@ async def on_cleanup(app):
 
     app['background_mqtt'].cancel()
     await app['background_mqtt']
+
+
+async def notify_ctx_processor(request: web.Request) -> Dict[str, Any]:
+    # Jinja2 context processor
+    session = await get_session(request)
+    notify = session.get("notify")
+    return {"notify": notify}
 
 
 def main():
@@ -149,25 +163,32 @@ def main():
 
     app = web.Application()
 
+    app.on_startup.append(on_startup)
+    app.on_shutdown.append(on_shutdown)
+    app.on_cleanup.append(on_cleanup)
+
     app['version'] = __version__
     app['options'] = options
     app['log'] = riego.logger.create_log(options)
     app['event_log'] = riego.logger.create_event_log(options)
     app['db'] = riego.database.Database(app)
     app['mqtt'] = riego_mqtt.Mqtt(app)
+    app['boxes'] = riego.boxes.Boxes(app)
 # boxes evtl. vor den Valves starten => MQTT -LWT nachrichten
     app['valves'] = riego.valves.Valves(app)
     app['parameter'] = riego.parameter.Parameter(app)
     app['timer'] = riego.timer.Timer(app)
-    app['boxes'] = riego.boxes.Boxes(app)
 
-    app.on_startup.append(on_startup)
-    app.on_shutdown.append(on_shutdown)
-    app.on_cleanup.append(on_cleanup)
+    # secret_key must be 32 url-safe base64-encoded bytes
+    fernet_key = fernet.Fernet.generate_key()
+    secret_key = base64.urlsafe_b64decode(fernet_key)
+    setup_session(app, EncryptedCookieStorage(secret_key))
 
+    loader = jinja2.FileSystemLoader(options.http_server_template_dir)
     aiohttp_jinja2.setup(app,
-                         loader=jinja2.FileSystemLoader(
-                             options.http_server_template_dir))
+                         loader=loader,
+                         context_processors=[notify_ctx_processor],
+                         )
 
     setup_routes(app)
     setup_error_pages(app)

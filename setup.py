@@ -25,6 +25,7 @@ setuptools.setup(
         'uvloop; sys_platform == "linux"',
         'cchardet',
         'aiohttp_debugtoolbar',
+        'aiohttp_session[secure]',
     ],
     include_package_data=True,
     scripts=['bin/setup_riego_service.sh'],
