@@ -54,13 +54,14 @@ async def system_event_log(request):
         # return web.Response(body=fp.read(), content_type="text/plain")
         return {'text': fp.read()}
 
+@router.get("/system/system_exc")
+async def system_exc(request):
+    raise NotImplementedError
+    return {}
+
 
 def register_router(app):
     app.add_routes(router)
-
-
-async def system_exc(request):
-    raise NotImplementedError
 
 
 async def _check_installed():
