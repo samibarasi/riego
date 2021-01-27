@@ -19,7 +19,10 @@ class Valves():
         self._db_conn = app['db'].conn
         self._mqtt = app['mqtt']
         self._log = app['log']
+        self._event_log = app['event_log']
         self._options = app['options']
+
+        self.__is_running = None
 
         # TODO Dependency Injection for websockets
         riego.web.websockets.subscribe('valves', self._ws_handler)
@@ -42,7 +45,6 @@ class Valves():
     async def _mqtt_result_handler(self, topic: str, payload: str) -> bool:
         """Dispatch mqtt message "stat/box_name/RESULT {POWER1 :  ON}"
 
-
         :param topic: Topic of subscribed MQTT-message
         :type topic: str
         :param payload: Payload of subscribed MQTT-message
@@ -64,6 +66,75 @@ class Valves():
             else:
                 await valve._set_off_confirm()
         return True
+
+    async def _send_status_with_websocket(self, valve: Row, key: str) -> json:
+        ret = {
+            'action': "status",
+            'model': "valves",
+            'id': valve['id'],
+            'prop': key,
+            'value': valve[key],
+        }
+        ret = json.dumps(ret)
+        await riego.web.websockets.send_to_all(ret)
+        return ret
+
+    async def _send_mqtt(self, valve: Row, payload: str) -> bool:
+        topic = "{prefix}/{box_topic}/{channel}".format(
+            prefix=self._options.mqtt_cmnd_prefix,
+            box_topic=valve['box_topic'],
+            channel=valve['channel'])
+        if self._mqtt.client is None:
+            return False
+        if not self._mqtt.client.is_connected:
+            return False
+            self._mqtt.client.publish(topic, 1)
+        return False
+
+    async def _set_on_try(self, valve: Row) -> Row:
+        with self._db_conn:
+            self._db_conn.execute(
+                'UPDATE valves SET is_running = ? WHERE id = ?',
+                (-1, valve['id']))
+        valve = self.fetch_one_by_id(valve['id'])
+        await self._send_status_with_websocket(valve, 'is_running')
+        await self._send_mqtt(valve, 1)
+        return valve
+
+    async def _set_off_try(self, valve: Row) -> Row:
+        with self._db_conn:
+            self._db_conn.execute(
+                'UPDATE valves SET is_running = ? WHERE id = ?',
+                (-1, valve['id']))
+        valve = self.fetch_one_by_id(valve['id'])
+        await self._send_status_with_websocket(valve, 'is_running')
+        await self._send_mqtt(valve, 0)
+        return valve
+
+    async def _set_on_confirm(self, valve: Row) -> Row:
+        last_run = datetime.now().strftime(self._options.time_format)
+        with self._db_conn:
+            self._db_conn.execute(
+                'UPDATE valves SET is_running = ?, last_run = ?  WHERE id = ?',
+                (1, last_run, valve['id']))
+
+        valve = self.fetch_one_by_id(valve['id'])
+        await self._send_status_with_websocket(valve, 'is_running')
+        await self._send_status_with_websocket(valve, 'last_run')
+        tmp = valve['name']
+        self._event_log.info(f'{tmp}: OFF')
+        return valve
+
+    async def _set_off_confirm(self, valve: Row) -> Row:
+        with self._db_conn:
+            self._db_conn.execute(
+                'UPDATE valves SET is_running = ?  WHERE id = ?',
+                (0, valve['id']))
+        valve = self.fetch_one_by_id(valve['id'])
+        await self._send_status_with_websocket(valve, 'is_running')
+        tmp = valve['name']
+        self._event_log.info(f'{tmp}: OFF')
+        return valve
 
     async def insert(self, item: dict) -> bool:
         try:
@@ -111,7 +182,9 @@ class Valves():
 
     async def fetch_one_by_key(self, key: str, value: Any) -> Row:
         c = self._db_conn.cursor()
-        sql = f'SELECT * FROM valves WHERE {key}=?'
+        sql = f'''SELECT valves.*, boxes.topic AS box_topic
+                  FROM valves, boxes
+                  WHERE valves.{key}= ? AND valves.box_id = boxes.id'''
         c.execute(sql, (value,))
         ret = c.fetchone()
         self._db_conn.commit()
@@ -119,21 +192,29 @@ class Valves():
 
     async def fetch_one_by_id(self, item_id: int) -> Row:
         c = self._db_conn.cursor()
-        c.execute('SELECT * FROM valves WHERE id=?', (item_id,))
+
+        c.execute('''SELECT valves.*, boxes.topic AS box_topic
+                  FROM valves, boxes
+                  WHERE valves.id= ? AND valves.box_id = boxes.id''',
+                  (item_id,))
         ret = c.fetchone()
         self._db_conn.commit()
         return ret
 
     async def fetch_all(self) -> Row:
         c = self._db_conn.cursor()
-        c.execute('SELECT * FROM valves')
+        c.execute('''SELECT valves.*, boxes.topic AS box_topic
+                  FROM valves, boxes
+                  WHERE valves.box_id = boxes.id''')
         ret = c.fetchall()
         self._db_conn.commit()
         return ret
 
     async def fetch_all_json(self) -> str:
         c = self._db_conn.cursor()
-        c.execute('SELECT * FROM valves')
+        c.execute('''SELECT valves.*, boxes.topic AS box_topic
+                  FROM valves, boxes
+                  WHERE valves.box_id = boxes.id''')
         ret = c.fetchall()
         self._db_conn.commit()
         return json.loads(ret)
