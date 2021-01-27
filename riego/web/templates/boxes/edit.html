@@ -5,14 +5,14 @@
 
 
 {% block content %}
-<h1>Edit: {{ item['display_name'] }}</h1>
+<h1>Edit: {{ item['name'] }}</h1>
 <form action="/boxes/{{ item['id'] }}/edit" method="POST"
       enctype="multipart/form-data">
 
 
       <div class="mb-3">
-        <label for="id2" class="form-label">Display name</label>
-        <input id="id2" name="display_name" value="{{item['display_name']}}"  type="text" class="form-control">
+        <label for="id2" class="form-label">Name</label>
+        <input id="id2" name="name" value="{{item['name']}}"  type="text" class="form-control">
       </div>
 
 

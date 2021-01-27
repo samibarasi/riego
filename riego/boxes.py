@@ -2,7 +2,7 @@ from datetime import datetime
 import re
 import json
 from sqlite3 import IntegrityError, Row
-from typing import Any, Dict
+from typing import Any
 
 
 class Boxes():
@@ -51,9 +51,9 @@ class Boxes():
             with self._db_conn:
                 cursor = self._db_conn.execute(
                     ''' INSERT INTO boxes
-                    (topic, display_name, remark)
+                    (topic, name, remark)
                     VALUES (?, ?, ?) ''',
-                    (item['topic'], item['display_name'], item['remark']))
+                    (item['topic'], item['name'], item['remark']))
         except IntegrityError:
             ret = None
         else:
@@ -66,9 +66,9 @@ class Boxes():
             with self._db_conn:
                 self._db_conn.execute(
                     ''' UPDATE boxes
-                        SET display_name = ?, remark = ?
+                        SET name = ?, remark = ?
                         WHERE id = ? ''',
-                    (item['display_name'], item['remark'], item_id))
+                    (item['name'], item['remark'], item_id))
         except IntegrityError:
             ret = False
         return ret
@@ -80,6 +80,9 @@ class Boxes():
                     'DELETE FROM boxes WHERE id = ?',
                     (item_id,))
         except IntegrityError:
+            # if nothing is deleted we don't get information,
+            # lastrowid is in every case 0,
+            # Exception is not raised
             pass
         return None
 
@@ -110,5 +113,4 @@ class Boxes():
         c.execute('SELECT * FROM boxes')
         ret = c.fetchall()
         self._db_conn.commit()
-        ret = json.loads(ret)
-        return ret
+        return json.loads(ret)

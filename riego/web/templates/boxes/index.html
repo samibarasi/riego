@@ -10,7 +10,7 @@
   <ul>
     {% for item in items %}
     <li>
-      <a href="/boxes/{{ item['id'] }}">{{ item['display_name'] }}</a> {{ item['topic'] }}
+      <a href="/boxes/{{ item['id'] }}">{{ item['name'] }}</a> {{ item['topic'] }}
     </li>
     {% endfor %}
   </ul>

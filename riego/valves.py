@@ -29,7 +29,7 @@ class Valve():
         self.__is_running = row['is_running']
         self.__is_enabled = row['is_enabled']
 
-        self.__box_display_name = row['box_display_name']
+        self.__box_name = row['box_name']
         self.__box_id = row['box_id']
 
     @ property
@@ -219,11 +219,11 @@ class Valves():
 
         self._valves = []
         self.idx_valves = -1
-        sql = '''SELECT valves.*, 
+        sql = '''SELECT valves.*,
             boxes.id AS box_id,
             boxes.topic AS box_topic,
-            boxes.display_name AS box_display_name
-            FROM valves, boxes 
+            boxes.name AS box_name
+            FROM valves, boxes
             WHERE valves.box_id = boxes.id;'''
         for row in db_conn.execute(sql):
             v = Valve(row, app)
