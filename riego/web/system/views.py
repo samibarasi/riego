@@ -9,7 +9,7 @@ import json
 from riego.__init__ import __version__
 from pkg_resources import packaging
 
-router = web.RouteTab7leDef()
+router = web.RouteTableDef()
 
 
 @router.get("/system")
@@ -53,6 +53,7 @@ async def system_event_log(request):
     with open(request.app['options'].event_log, "rt") as fp:
         # return web.Response(body=fp.read(), content_type="text/plain")
         return {'text': fp.read()}
+
 
 @router.get("/system/system_exc")
 async def system_exc(request):

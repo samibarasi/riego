@@ -1,25 +1,43 @@
 {% extends "base.html" %}
 
-{% set title = "Riego - Ventilboxen" %}
-{% set active_menu = "boxes" %}
+{% set title = "Riego - Bewässerungskreise" %}
+{% set active_menu = "valves" %}
 
 
 {% block content %}
 <h1>Edit: {{ item['name'] }}</h1>
-<form action="/boxes/{{ item['id'] }}/edit" method="POST"
+<form action="/valves/{{ item['id'] }}/edit" method="POST"
       enctype="multipart/form-data">
 
 
       <div class="mb-3">
-        <label for="id2" class="form-label">Name</label>
-        <input id="id2" name="name" value="{{item['name']}}"  type="text" class="form-control">
+        <label for="id1" class="form-label">name</label>
+        <input id="id1" name="name" value="{{item['name']}}"  type="text" class="form-control">
       </div>
 
-
+      <div class="mb-3">
+        <label for="id2" class="form-label">remark</label>
+        <input id="id2" name="remark" value="{{item['remark']}}"  type="text" class="form-control">
+      </div>
 
       <div class="mb-3">
-        <label for="id3" class="form-label">Remark</label>
-        <input id="id3" name="remark" value="{{item['remark']}}"  type="text" class="form-control">
+        <label for="id3" class="form-label">duration</label>
+        <input id="id43" name="duration" value="{{item['duration']}}"  type="text" class="form-control">
+      </div>
+
+      <div class="mb-3">
+        <label for="id4" class="form-label">interval</label>
+        <input id="id4" name="interval" value="{{item['interval']}}"  type="text" class="form-control">
+      </div>
+
+      <div class="mb-3">
+        <label for="id5" class="form-label">is_ebnabled</label>
+        <input id="id5" name="is_enabled" value="{{item['is_enabled']}}"  type="text" class="form-control">
+      </div>
+
+      <div class="mb-3">
+        <label for="id6" class="form-label">Hide</label>
+        <input id="id6" name="hide" value="{{item['hide']}}"  type="text" class="form-control">
       </div>
 
 
@@ -28,8 +46,8 @@
 <hr>
 
 <p>
-  <a href="/boxes">list</a>
-  <a href="/boxes/{{ item['id'] }}">view</a>
-  <a href="/boxes/{{ item['id'] }}/delete">delete</a>
+  <a href="/valves">list</a>
+  <a href="/valves/{{ item['id'] }}">view</a>
+  <a href="/valves/{{ item['id'] }}/delete">delete</a>
 </p>
 {% endblock %}

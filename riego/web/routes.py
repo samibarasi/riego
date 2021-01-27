@@ -1,6 +1,6 @@
 from riego.web.dashboard.views import dashboard_index
 
-
+import riego.web.system.views
 import riego.web.boxes.views
 import riego.web.valves.views
 

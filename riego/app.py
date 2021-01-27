@@ -40,7 +40,7 @@ async def on_startup(app):
     app['log'].info("on_startup")
 # TODO bring next two lines to correspondending classes
     app['background_mqtt'] = asyncio.create_task(app['mqtt'].start_async())
-    app['background_timer'] = asyncio.create_task(app['timer'].start_async())
+#    app['background_timer'] = asyncio.create_task(app['timer'].start_async())
 
 
 async def on_shutdown(app):
@@ -50,8 +50,8 @@ async def on_shutdown(app):
 async def on_cleanup(app):
     app['log'].info("on_cleanup")
 
-    app['background_timer'].cancel()
-    await app['background_timer']
+#    app['background_timer'].cancel()
+#    await app['background_timer']
 
     app['background_mqtt'].cancel()
     await app['background_mqtt']
@@ -179,7 +179,7 @@ def main():
 # boxes evtl. vor den Valves starten => MQTT -LWT nachrichten
     app['valves'] = riego.valves.Valves(app)
     app['parameter'] = riego.parameter.Parameter(app)
-    app['timer'] = riego.timer.Timer(app)
+#    app['timer'] = riego.timer.Timer(app)
 
     fernet_key = fernet.Fernet.generate_key()
     secret_key = base64.urlsafe_b64decode(fernet_key)

@@ -50,7 +50,6 @@ class Boxes():
             # TODO if item "Wifi" take the Wifi nested dict and,
             #  search and extract "signal"
             if re.match('^POWER\d+', item) is not None:  # noqa: W605
-                print(f'box_topic: {box_topic}, item: {item}')
                 try:
                     with self._db_conn:
                         self._db_conn.execute(
@@ -74,7 +73,6 @@ class Boxes():
         sw_version = payload.get('Version', '')
         fallback_topic = payload.get('FallbackTopic', '')
         group_topic = payload.get('GroupTopic', '')
-
         try:
             with self._db_conn:
                 self._db_conn.execute(
@@ -99,7 +97,6 @@ class Boxes():
         payload = json.loads(payload)
         hostname = payload.get('Hostname', '')
         ip_address = payload.get('IPAddress', '')
-
         try:
             with self._db_conn:
                 self._db_conn.execute(

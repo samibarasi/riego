@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% set title = "Riego - Ventilboxen" %}
-{% set active_menu = "boxes" %}
+{% set title = "Riego - Bewässerungskreise" %}
+{% set active_menu = "valves" %}
 
 
 {% block content %}
@@ -10,14 +10,14 @@
   <ul>
     {% for item in items %}
     <li>
-      <a href="/boxes/{{ item['id'] }}">{{ item['name'] }}</a> {{ item['topic'] }}
+      <a href="/valves/{{ item['id'] }}">{{ item['name'] }}</a> {{ item['box_id'] }} {{ item['channel'] }}
     </li>
     {% endfor %}
   </ul>
 </p>
 <hr>
 <p>
-  <a href="/boxes/new">New</a> 
+  <a href="/valves/new">New</a> 
 </p>
 
 {% endblock %}
