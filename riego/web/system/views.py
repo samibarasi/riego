@@ -9,7 +9,10 @@ import json
 from riego.__init__ import __version__
 from pkg_resources import packaging
 
+router = web.RouteTab7leDef()
 
+
+@router.get("/system")
 @aiohttp_jinja2.template('system/index.html')
 async def system_index(request):
     installed_version = await _check_installed()
@@ -22,33 +25,38 @@ async def system_index(request):
     return {'text': text}
 
 
+@router.get("/system/check_update")
 @aiohttp_jinja2.template('system/index.html')
 async def system_check_update(request):
     update = await _check_update("No update")
     return {'text':  update}
 
 
+@router.get("/system/do_update")
 @aiohttp_jinja2.template('system/index.html')
 async def system_do_update(request):
     await _do_update()
     return {'text': "Restart erforderlich"}
 
 
+@router.get("/system/restart")
 @aiohttp_jinja2.template('system/index.html')
 async def system_restart(request):
+    # TODO shedule exit for a few seconds and return a redirect
     exit(0)
+    return {}
 
 
-@aiohttp_jinja2.template('system/index.html')
-async def system_setup(request):
-    return {'text': 'Hello, world2'}
-
-
+@router.get("/system/event_log")
 @aiohttp_jinja2.template('system/index.html')
 async def system_event_log(request):
     with open(request.app['options'].event_log, "rt") as fp:
         # return web.Response(body=fp.read(), content_type="text/plain")
         return {'text': fp.read()}
+
+
+def register_router(app):
+    app.add_routes(router)
 
 
 async def system_exc(request):
@@ -101,15 +109,3 @@ async def _do_update():
         "-q", "-q", "-q")
     await proc.wait()
     return proc.returncode
-
-
-async def _stream_rsponse(request: web.Request) -> web.StreamResponse:
-    resp = web.StreamResponse()
-    name = request.match_info.get("name", "Anonymous")
-    answer = ("Hello, " + name).encode("utf8")
-    resp.content_length = len(answer)
-    resp.content_type = "text/plain"
-    await resp.prepare(request)
-    await resp.write(answer)
-    await resp.write_eof()
-    return resp
