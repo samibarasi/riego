@@ -13,7 +13,7 @@ class Database:
         try:
             backend = get_backend('sqlite:///' + options.database)
         except Exception as e:
-            self.log.error(f'Not able to open database: {e}')
+            self.log.critical(f'Not able to open database: {e}')
             exit(1)
 
         migrations = read_migrations(options.database_migrations_dir)
@@ -24,7 +24,7 @@ class Database:
             self.conn = sqlite3.connect(options.database)
             self.conn.row_factory = sqlite3.Row
         except Exception as e:
-            self.log.error(f'Not able to connect to database: {e}')
+            self.log.critical(f'Not able to connect to database: {e}')
             if self.conn is not None:
                 self.conn.close()
             exit(1)

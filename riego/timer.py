@@ -26,6 +26,18 @@ class Timer():
                     await asyncio.sleep(2)
                     v = self._valves.get_next()
                     continue
+                if v.name is None:
+                    await asyncio.sleep(1)
+                    v = self._valves.get_next()
+                    continue
+#                if v.hide == 1:
+#                    await asyncio.sleep(1)
+#                    v = self._valves.get_next()
+#                    continue
+                if v.is_enabled == 0:
+                    await asyncio.sleep(1)
+                    v = self._valves.get_next()
+                    continue
                 if v.is_running == -1:
                     await asyncio.sleep(2)
                     v = self._valves.get_next()
