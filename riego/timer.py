@@ -18,15 +18,14 @@ class Timer():
         self._running_period_end = None
         self._running_period_start = None
 
-        self.__stop = False
-        self.__task = None
-
+        self._stop = False
+        self._task = None
         app.cleanup_ctx.append(self.timer_engine)
 
     async def timer_engine(self, app):
-        self.__task = asyncio.create_task(self._my_loop())
+        self._task = asyncio.create_task(self._my_loop())
         yield
-        self.__stop = True
+        self._stop = True
         self._log.debug('Timer stop called')
         # self.__task.cancel()
 

@@ -23,7 +23,8 @@ class Mqtt:
     async def mqtt_engine(self, app):
         self._task = asyncio.create_task(self._startup(app))
         yield
-        self._shutdown(app, self._task)
+        # TODO _shutdown should not be an awaitable
+        await self._shutdown(app, self._task)
         self._log.debug('MQTT Engine shutdown called')
 
     async def _startup(self, app) -> None:
@@ -33,13 +34,9 @@ class Mqtt:
                                   version=MQTTv311)
         return None
 
-    def _shutdown(self, app, task) -> None:
+    async def _shutdown(self, app, task) -> None:
         # TODO hier kein awaitable sinnvoll
-        # await self.client.disconnect()
-
-        # TODO ggfl.
-        # task.cancel()
-        # await task
+        await self.client.disconnect()
         return None
 
     def _on_connect(self, client, flags, rc, properties):
@@ -51,6 +48,7 @@ class Mqtt:
     async def _on_message(self, client, topic, payload, qos, properties):
         payload = payload.decode()
 #        self._log.debug(f'MQTT RECV MSG: {payload}, TOPIC: {topic}')
+# TODO better suscritpion system
         for key in self.subscriptions:
             if self.match_topic(topic, key):
                 func = self.subscriptions[key]
@@ -63,22 +61,10 @@ class Mqtt:
     def _on_subscribe(self, client, mid, qos, properties):
         self._log.debug('MQTT SUBSCRIBED')
 
-    async def start_async(self):
-        await self.client.connect(self._options.mqtt_host,
-                                  port=self._options.mqtt_port,
-                                  keepalive=10,
-                                  version=MQTTv311)
-#        while True:
-#            try:
-#                await asyncio.sleep(1)
-#            except asyncio.CancelledError:
-#                self.__log.debug('MQTT: trapped cancel')
-#                break
-#        self.__log.debug('MQTT: call disconnect()')
-#        await self.client.disconnect()
-
     def subscribe(self, topic: str, callback: callable) -> None:
         self.subscriptions[topic] = callback
+# TODO only subscription from callbacks are possible,
+#because client is not connected in this momen
 
 #    Der MQTT Client ist noch nicht gestartet.
 #    Subscribe ist noch nicht möglich.
@@ -90,9 +76,6 @@ class Mqtt:
         # ergebn ein Match! Die regex ist nicht korrekt!
         ret = bool(re.match(sub.translate({43: "[^/]+", 35: ".+"}), topic))
         return ret
-
-    async def shutdown(self):
-        await self.client.disconnect()
 
 
 # Manually create Mock-Object

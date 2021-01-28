@@ -76,7 +76,7 @@ class Valves():
         payload = json.loads(payload)
         for channel in payload:
             topic = box + '/' + channel
-            valve = self.fetch_one_by_key("topic", topic)
+            valve = await self.fetch_one_by_key("topic", topic)
             if valve is None:
                 self.log.error(f'valves._mqtt_result_handler: unknown topic: {topic}')  # noqa: E501
                 continue
@@ -116,7 +116,7 @@ class Valves():
             self._db_conn.execute(
                 'UPDATE valves SET is_running = ? WHERE id = ?',
                 (-1, valve['id']))
-        valve = self.fetch_one_by_id(valve['id'])
+        valve = await self.fetch_one_by_id(valve['id'])
         await self._send_status_with_websocket(valve, 'is_running')
         await self._send_mqtt(valve, 1)
         return valve
@@ -126,7 +126,7 @@ class Valves():
             self._db_conn.execute(
                 'UPDATE valves SET is_running = ? WHERE id = ?',
                 (-1, valve['id']))
-        valve = self.fetch_one_by_id(valve['id'])
+        valve = await self.fetch_one_by_id(valve['id'])
         await self._send_status_with_websocket(valve, 'is_running')
         await self._send_mqtt(valve, 0)
         return valve
@@ -138,7 +138,7 @@ class Valves():
                 'UPDATE valves SET is_running = ?, last_run = ?  WHERE id = ?',
                 (1, last_run, valve['id']))
 
-        valve = self.fetch_one_by_id(valve['id'])
+        valve = await self.fetch_one_by_id(valve['id'])
         await self._send_status_with_websocket(valve, 'is_running')
         await self._send_status_with_websocket(valve, 'last_run')
         tmp = valve['name']
@@ -150,7 +150,7 @@ class Valves():
             self._db_conn.execute(
                 'UPDATE valves SET is_running = ?  WHERE id = ?',
                 (0, valve['id']))
-        valve = self.fetch_one_by_id(valve['id'])
+        valve = await self.fetch_one_by_id(valve['id'])
         await self._send_status_with_websocket(valve, 'is_running')
         tmp = valve['name']
         self._event_log.info(f'{tmp}: OFF')
