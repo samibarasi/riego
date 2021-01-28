@@ -170,14 +170,8 @@ class Boxes():
 
     async def fetch_all(self) -> Row:
         c = self._db_conn.cursor()
-        c.execute('SELECT * FROM boxes')
+        c.execute('SELECT * FROM boxes ORDER BY id')
         ret = c.fetchall()
         self._db_conn.commit()
         return ret
 
-    async def fetch_all_json(self) -> str:
-        c = self._db_conn.cursor()
-        c.execute('SELECT * FROM boxes')
-        ret = c.fetchall()
-        self._db_conn.commit()
-        return json.loads(ret)

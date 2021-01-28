@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import asyncio
+from sqlite3 import Row
 
 
 class Timer():
@@ -17,66 +18,28 @@ class Timer():
         self._running_period_end = None
         self._running_period_start = None
 
-    async def start_async(self):
-        v = self._valves.get_next()
-        while True:
-            try:
-                if v is None:
-                    # No valves in database found, system is initalizing
-                    await asyncio.sleep(2)
-                    v = self._valves.get_next()
-                    continue
-                if v.name is None:
-                    await asyncio.sleep(1)
-                    v = self._valves.get_next()
-                    continue
-#                if v.hide == 1:
-#                    await asyncio.sleep(1)
-#                    v = self._valves.get_next()
-#                    continue
-                if v.is_enabled == 0:
-                    await asyncio.sleep(1)
-                    v = self._valves.get_next()
-                    continue
-                if v.is_running == -1:
-                    await asyncio.sleep(2)
-                    v = self._valves.get_next()
-                    continue
-                if v.is_running == 1:
-                    if self._options.enable_timer_dev_mode:
-                        td = timedelta(minutes=0, seconds=v.duration)
-                    else:
-                        td = timedelta(minutes=v.duration)
+        self.__stop = False
+        self.__task = None
 
-                    if datetime.now() - v.last_run > td:
-                        # Laufzeit erreicht
-                        await v.set_is_running(0)
-                        self._log.debug("valveOff " + v.name)
-                    else:
-                        pass
-                if v.is_running == 0:
-                    if self._options.enable_timer_dev_mode:
-                        td = timedelta(days=0, seconds=v.interval)
-                    else:
-                        td = timedelta(days=v.interval)
+        app.cleanup_ctx.append(self.timer_engine)
 
-                    if (datetime.now() - v.last_run > td and v.is_enabled and
-                            await self.is_running_period()):
-                        # Intervall erreicht
-                        await v.set_is_running(1)
-                        self._log.debug("valveOn " + v.name)
-                    else:
-                        v = self._valves.get_next()
-                        self._log.debug("NextValve: " + v.name)
-                await asyncio.sleep(2)
-            except asyncio.CancelledError:
-                self._log.debug("Timer: trapped cancel")
-                break
-        self._log.debug("Timer: shutdown valve")
-        if v is not None:
-            await v.set_is_running(0)
+    async def timer_engine(self, app):
+        self.__task = asyncio.create_task(self._my_loop())
+        yield
+        self.__stop = True
+        self._log.debug('Timer stop called')
+        # self.__task.cancel()
 
-    async def is_running_period(self) -> bool:
+    async def _my_loop(self) -> None:
+        while not self.__stop:
+            valves = await self._valves.fetch_all()
+            valve_name = valves[0]['name']
+            print(f'next: {valve_name}')
+            await asyncio.sleep(1)
+        # TODO close last valve
+        return None
+
+    async def _is_running_period(self) -> bool:
         if self._running_period_start is None:
             self._running_period_start = datetime.now().replace(
                 hour=self._start_hour, minute=self._start_minute)
@@ -92,5 +55,4 @@ class Timer():
         if datetime.now() > self._running_period_end:
             self._running_period_start = None
             return False
-
         return True

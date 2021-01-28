@@ -8,36 +8,36 @@
 {%for valve in valves %}
 
 <div class="bg-light p-3 rounded">
-    <h3>{{valves[valve].name}}</h3>
-    <label for="valves_{{valve}}_duration" class="form-label">Dauer: {{valves[valve].duration}} Minuten</label>
-    <input type="range" class="form-range" min="0" max="90" id="valves_{{valve}}_duration" autocomplete="off"
-        value="{{valves[valve].duration}}"
-        onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'duration', value: this.value } ));"
+    <h3>{{valve['name']}}</h3>
+    <label for="valves_{{valve['id']}}_duration" class="form-label">Dauer: {{valve['duration']}} Minuten</label>
+    <input type="range" class="form-range" min="0" max="90" id="valves_{{valve['id']}}_duration" autocomplete="off"
+        value="{{valve['duration']}}"
+        onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve['id']}}', key: 'duration', value: this.value } ));"
         oninput="this.previousElementSibling.innerHTML = 'Dauer: ' + this.value + ' Minuten';">
 
-    <label for="valves_{{valve}}_interval" class="form-label">Intervall: {{valves[valve].interval}} Tage</label>
-    <input type="range" class="form-range" min="0" max="10" id="valves_{{valve}}_interval" autocomplete="off"
-        value="{{valves[valve].interval}}"
-        onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'interval', value: this.value } ));"
+    <label for="valves_{{valve['id']}}_interval" class="form-label">Intervall: {{valve['interval']}} Tage</label>
+    <input type="range" class="form-range" min="0" max="10" id="valves_{{valve['id']}}_interval" autocomplete="off"
+        value="{{valve['interval']}}"
+        onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve['id']}}', key: 'interval', value: this.value } ));"
         oninput="this.previousElementSibling.innerHTML = 'Intervall: ' + this.value + ' Tage';">
 
 
     <div class="row g-3">
         <div class="col form-check form-switch">
-            <input class="form-check-input" type="checkbox" id="valves_{{valve}}_is_running" autocomplete="off" 
-            {% if valves[valve].is_running==1 %} checked {% endif %}
-                onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'is_running', value: this.checked } ))">
-            <label class="form-check-label" for="valves_{{valve}}_is_running">Offen</label>
+            <input class="form-check-input" type="checkbox" id="valves_{{valve['id']}}_is_running" autocomplete="off" 
+            {% if valve['is_running'] == 1 %} checked {% endif %}
+                onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{ valve['id'] }}', key: 'is_running', value: this.checked } ))">
+            <label class="form-check-label" for="valves_{{valve['id']}}_is_running">Offen</label>
         </div>
 
         <div class="col form-check">
-            <input class="form-check-input" type="checkbox" value="" id="valves_{{valve}}_is_enabled" autocomplete="off"
-                {% if valves[valve].is_enabled==1 %} checked {% endif %}
-                onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve}}', prop: 'is_enabled', value: this.checked } ))">
-            <label class="form-check-label" for="valves_{{valve}}_is_enabled">Aktiviert</label>
+            <input class="form-check-input" type="checkbox" value="" id="valves_{{valve['id']}}_is_enabled" autocomplete="off"
+                {% if valve['is_enabled'] == 1 %} checked {% endif %}
+                onchange="ws.send(JSON.stringify({action: 'update', model: 'valves', id: '{{valve['id'] }}', key: 'is_enabled', value: this.checked } ))">
+            <label class="form-check-label" for="valves_{{valve['id']}}_is_enabled">Aktiviert</label>
         </div>
     </div>
-    <label class="form-check-label" id="valves_{{valve}}_last_run">{{valves[valve].last_run}}</label>
+    <label class="form-check-label" id="valves_{{valve['id']}}_last_run">{{valve['last_run']}}</label>
 
     
 </div>

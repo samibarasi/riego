@@ -9,4 +9,5 @@ async def dashboard_index(request):
                         'heading': 'Danger!',
                         'text': 'lorem ipsum'}
     session.changed()
-    return {'valves': request.app['valves'].get_dict_of_all()}
+    valves = await request.app['valves'].fetch_all()
+    return {'valves': valves}

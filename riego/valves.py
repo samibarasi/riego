@@ -4,7 +4,6 @@ import json
 from sqlite3 import IntegrityError, Row
 from typing import Any
 
-
 import riego.web.websockets
 
 bool_to_int = {'true': 1, 'false': 0, True: 1, False: 0,
@@ -30,17 +29,26 @@ class Valves():
         self._mqtt.subscribe(self._options.mqtt_result_subscription,
                              self._mqtt_result_handler)
 
-    async def _ws_handler(self, msg: dict):
-        """Find object from class valve with id=msg[id] and
-        Call setter-method of Class Valve according to msg['prop']
-        """
-        self.log.debug(f'In Valves._ws_handler: {msg}')
+    async def _ws_handler(self, msg: dict) -> None:
+        self._log.debug(f'In Valves._ws_handler: {msg}')
+        if msg['action'] == 'update':
+            await self._update_by_key(msg['id'], msg['key'], msg['value'])
+        return None
 
-        if not msg['action'] == 'update':
-            return None
-        valve = self.get_valve_by_id(msg['id'])
-        func = getattr(valve, "set_" + msg['prop'])
-        await func(msg['value'])
+    async def _update_by_key(self, id: int, key: str, value: Any) -> None:
+        valve = await self.fetch_one_by_id(id)
+        if key == "is_running":
+            val = bool_to_int[value]
+            if val:
+                await self._set_on_try(valve)
+            else:
+                await self._set_off_try(valve)
+        else:
+            # TODO Data Typ Conversion possible needed
+            sql = f'UPDATE valves SET {key} = ? WHERE id = ?'
+            with self._db_conn:
+                self._db_conn.execute(sql, (value,))
+        return None
 
     async def _mqtt_result_handler(self, topic: str, payload: str) -> bool:
         """Dispatch mqtt message "stat/box_name/RESULT {POWER1 :  ON}"
@@ -56,15 +64,15 @@ class Valves():
         payload = json.loads(payload)
         for channel in payload:
             topic = box + '/' + channel
-            valve = self.get_valve_by_topic(topic)
+            valve = self.fetch_one_by_key("topic", topic)
             if valve is None:
                 self.log.error(f'valves._mqtt_result_handler: unknown topic: {topic}')  # noqa: E501
                 continue
             value = bool_to_int[payload[channel]]
             if value == 1:
-                await valve._set_on_confirm()
+                await self._set_on_confirm(valve)
             else:
-                await valve._set_off_confirm()
+                await self._set_off_confirm(valve)
         return True
 
     async def _send_status_with_websocket(self, valve: Row, key: str) -> json:
@@ -192,7 +200,6 @@ class Valves():
 
     async def fetch_one_by_id(self, item_id: int) -> Row:
         c = self._db_conn.cursor()
-
         c.execute('''SELECT valves.*, boxes.topic AS box_topic
                   FROM valves, boxes
                   WHERE valves.id= ? AND valves.box_id = boxes.id''',
@@ -205,16 +212,8 @@ class Valves():
         c = self._db_conn.cursor()
         c.execute('''SELECT valves.*, boxes.topic AS box_topic
                   FROM valves, boxes
-                  WHERE valves.box_id = boxes.id''')
+                  WHERE valves.box_id = boxes.id
+                  ORDER BY valves.id''')
         ret = c.fetchall()
         self._db_conn.commit()
         return ret
-
-    async def fetch_all_json(self) -> str:
-        c = self._db_conn.cursor()
-        c.execute('''SELECT valves.*, boxes.topic AS box_topic
-                  FROM valves, boxes
-                  WHERE valves.box_id = boxes.id''')
-        ret = c.fetchall()
-        self._db_conn.commit()
-        return json.loads(ret)
