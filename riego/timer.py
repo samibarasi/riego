@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 import asyncio
-from sqlite3 import Row
 
 
 class Timer():

@@ -5,7 +5,7 @@
 
 {% block content %}
 
-{%for valve in valves %}
+{%for valve in valves if not valve.hide %}
 
 <div class="bg-light p-3 rounded">
     <h3>{{valve['name']}}</h3>
@@ -64,7 +64,7 @@
         switch (data.action) {
             case 'status':
                 
-                dom_id = data.model + "_" + data.id + "_" + data.prop
+                dom_id = data.model + "_" + data.id + "_" + data.key
                 el = document.getElementById(dom_id)
                 if (data.value == -1) {
                     el.disabled = true;

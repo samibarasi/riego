@@ -40,22 +40,41 @@ class Boxes():
         return True
 
     async def _mqtt_state_handler(self, topic: str, payload: str) -> int:
+        """Insert lines into valves table for every Channel found in 
+        "/state/+/POWERX" message
+
+        :param topic: state message from valve box
+        :type topic: str
+        :param payload: payload string with status from all channels
+        :type payload: str
+        :return: count of inserts into table valves
+        :rtype: int
+        """
         self._log.debug(f'State: {topic}, payload: {payload}')
         inserts_success = 0
-        box_topic = re.search('/(.*?)/', topic).group(1)
+
+        box_topic = re.search('/(.*?)/', topic)
+        if box_topic is None:
+            return 0
+        box_topic = box_topic.group(1)
 
         payload = json.loads(payload)
 
         for item in payload:
             # TODO if item "Wifi" take the Wifi nested dict and,
             #  search and extract "signal"
-            if re.match('^POWER\d+', item) is not None:  # noqa: W605
+            channel_nr = re.match('^POWER(\d+)', item)
+            if channel_nr is not None:  # noqa: W605
+                channel_nr = channel_nr.group(1)
                 try:
                     with self._db_conn:
                         self._db_conn.execute(
-                            '''insert into valves (box_id, topic)
-                        values((select id from boxes where topic = ?), ?)''',
-                            (box_topic, item))
+                            '''insert into valves (box_id, topic, channel_nr)
+                                values(
+                                    (select id from boxes where topic = ?),
+                                    ?, ?
+                                )''',
+                            (box_topic, f'{box_topic}/{item}', channel_nr))
                 except IntegrityError:
                     pass
                 else:
@@ -174,4 +193,3 @@ class Boxes():
         ret = c.fetchall()
         self._db_conn.commit()
         return ret
-

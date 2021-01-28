@@ -10,7 +10,7 @@
   <ul>
     {% for item in items %}
     <li>
-      <a href="/valves/{{ item['id'] }}">{{ item['name'] }}</a> {{ item['box_topic'] }}/{{ item['topic'] }}
+      <a href="/valves/{{ item['id'] }}">{{ item['name'] }}</a> {{ item['topic'] }} {{ item['box_name'] }} {{ item['channel_nr']}}
     </li>
     {% endfor %}
   </ul>

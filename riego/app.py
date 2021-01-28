@@ -19,7 +19,6 @@ import riego.web.websockets
 
 from riego.web.routes import setup_routes
 from riego.web.error_pages import setup_error_pages
-#from riego.web.websockets import setup_websockets
 
 from aiohttp import web
 import jinja2

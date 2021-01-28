@@ -15,7 +15,7 @@ class Mqtt:
         self.client.on_message = self._on_message
         self.client.on_disconnect = self._on_disconnect
         self.client.on_subscribe = self._on_subscribe
-        self.subscriptions = {}
+        self._subscriptions = {}
 
         self._task = None
         app.cleanup_ctx.append(self.mqtt_engine)
@@ -43,17 +43,20 @@ class Mqtt:
     def _on_connect(self, client, flags, rc, properties):
         self._log.debug('MQTT Connected')
 
-        for key in self.subscriptions:
+        for key in self._subscriptions:
             self.client.subscribe(key, qos=0)
 
     async def _on_message(self, client, topic, payload, qos, properties):
         payload = payload.decode()
 #        self._log.debug(f'MQTT RECV MSG: {payload}, TOPIC: {topic}')
-# TODO better suscritpion system
-        for key in self.subscriptions:
+        for key in self._subscriptions:
             if self.match_topic(topic, key):
-                func = self.subscriptions[key]
-                await func(topic, payload)
+                func = self._subscriptions[key]
+                try:
+                    await func(topic, payload)
+                except Exception as e:
+                    self._log.error(
+                        f'{__name__}, exeption {e} in callable {func}')
         return 0
 
     def _on_disconnect(self, client, packet, exc=None):
@@ -63,7 +66,7 @@ class Mqtt:
         self._log.debug('MQTT SUBSCRIBED')
 
     def subscribe(self, topic: str, callback: callable) -> None:
-        self.subscriptions[topic] = callback
+        self._subscriptions[topic] = callback
 # TODO only subscription from callbacks are possible,
 # because client is not connected in this momen
 
