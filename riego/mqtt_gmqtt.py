@@ -17,6 +17,31 @@ class Mqtt:
         self.client.on_subscribe = self._on_subscribe
         self.subscriptions = {}
 
+        self._task = None
+        app.cleanup_ctx.append(self.mqtt_engine)
+
+    async def mqtt_engine(self, app):
+        self._task = asyncio.create_task(self._startup(app))
+        yield
+        self._shutdown(app, self._task)
+        self._log.debug('MQTT Engine shutdown called')
+
+    async def _startup(self, app) -> None:
+        await self.client.connect(self._options.mqtt_host,
+                                  port=self._options.mqtt_port,
+                                  keepalive=10,
+                                  version=MQTTv311)
+        return None
+
+    def _shutdown(self, app, task) -> None:
+        # TODO hier kein awaitable sinnvoll
+        # await self.client.disconnect()
+
+        # TODO ggfl.
+        # task.cancel()
+        # await task
+        return None
+
     def _on_connect(self, client, flags, rc, properties):
         self._log.debug('MQTT Connected')
 

@@ -39,7 +39,7 @@ async def on_startup(app):
         asyncio.get_event_loop().set_debug(True)
     app['log'].info("on_startup")
 # TODO bring next two lines to correspondending classes
-    app['background_mqtt'] = asyncio.create_task(app['mqtt'].start_async())
+#    app['background_mqtt'] = asyncio.create_task(app['mqtt'].start_async())
 
 
 async def on_shutdown(app):
@@ -49,8 +49,8 @@ async def on_shutdown(app):
 async def on_cleanup(app):
     app['log'].info("on_cleanup")
 
-    app['background_mqtt'].cancel()
-    await app['background_mqtt']
+#    app['background_mqtt'].cancel()
+#    await app['background_mqtt']
 
 
 async def alert_ctx_processor(request: web.Request) -> Dict[str, Any]:
