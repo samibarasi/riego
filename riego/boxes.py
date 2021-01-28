@@ -53,7 +53,7 @@ class Boxes():
                 try:
                     with self._db_conn:
                         self._db_conn.execute(
-                            '''insert into valves (box_id, channel)
+                            '''insert into valves (box_id, topic)
                         values((select id from boxes where topic = ?), ?)''',
                             (box_topic, item))
                 except IntegrityError:

@@ -74,13 +74,13 @@ class Valves():
         """
         box = re.search('/(.*?)/', topic).group(1)
         payload = json.loads(payload)
-        for channel in payload:
-            topic = box + '/' + channel
+        for topic in payload:
+            topic = box + '/' + topic
             valve = await self.fetch_one_by_key("topic", topic)
             if valve is None:
                 self.log.error(f'valves._mqtt_result_handler: unknown topic: {topic}')  # noqa: E501
                 continue
-            value = bool_to_int[payload[channel]]
+            value = bool_to_int[payload[topic]]
             if value == 1:
                 await self._set_on_confirm(valve)
             else:
@@ -100,10 +100,10 @@ class Valves():
         return ret
 
     async def _send_mqtt(self, valve: Row, payload: str) -> bool:
-        topic = "{prefix}/{box_topic}/{channel}".format(
+        topic = "{prefix}/{box_topic}/{topic}".format(
             prefix=self._options.mqtt_cmnd_prefix,
             box_topic=valve['box_topic'],
-            channel=valve['channel'])
+            topic=valve['topic'])
         if self._mqtt.client is None:
             return False
         if not self._mqtt.client.is_connected:
@@ -161,9 +161,9 @@ class Valves():
             with self._db_conn:
                 cursor = self._db_conn.execute(
                     '''INSERT INTO valves
-                    (name, box_id, channel)
+                    (name, box_id, topic)
                     VALUES (?, ?, ?)''',
-                    (item['name'], item['box_id'], item['channel']))
+                    (item['name'], item['box_id'], item['topic']))
         except IntegrityError:
             ret = None
         else:
