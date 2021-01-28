@@ -9,6 +9,7 @@ class Timer():
         self._parameter = app['parameter']
         self._options = app['options']
         self._log = app['log']
+        self._mqtt = app['mqtt']
 
         self._maxDuration = int(self._parameter.get('maxDuration'))
         self._start_hour, self._start_minute = self._parameter.get(
@@ -23,20 +24,26 @@ class Timer():
         app.cleanup_ctx.append(self.timer_engine)
 
     async def timer_engine(self, app):
-        self._task = asyncio.create_task(self._my_loop())
+        self._task = asyncio.create_task(self._startup(app))
         yield
-        self._stop = True
-        self._log.debug('Timer stop called')
-        # self.__task.cancel()
+        self._shutdown(app, self._task)
 
-    async def _my_loop(self) -> None:
-        while not self.__stop:
+    async def _startup(self, app) -> None:
+        self._log.debug('Timer Engine startup called')
+
+        while not self._stop:
+            await asyncio.sleep(1)
+            if not self._mqtt.client.is_connected:
+                continue
             valves = await self._valves.fetch_all()
             valve_name = valves[0]['name']
             print(f'next: {valve_name}')
-            await asyncio.sleep(1)
         # TODO close last valve
         return None
+
+    def _shutdown(self, app, task) -> None:
+        self._log.debug('Timer Engine shutdown called')
+        self._stop = True
 
     async def _is_running_period(self) -> bool:
         if self._running_period_start is None:

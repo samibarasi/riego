@@ -25,9 +25,9 @@ class Mqtt:
         yield
         # TODO _shutdown should not be an awaitable
         await self._shutdown(app, self._task)
-        self._log.debug('MQTT Engine shutdown called')
 
     async def _startup(self, app) -> None:
+        self._log.debug('MQTT Engine startup called')
         await self.client.connect(self._options.mqtt_host,
                                   port=self._options.mqtt_port,
                                   keepalive=10,
@@ -35,6 +35,7 @@ class Mqtt:
         return None
 
     async def _shutdown(self, app, task) -> None:
+        self._log.debug('MQTT Engine shutdown called')
         # TODO hier kein awaitable sinnvoll
         await self.client.disconnect()
         return None
@@ -64,7 +65,7 @@ class Mqtt:
     def subscribe(self, topic: str, callback: callable) -> None:
         self.subscriptions[topic] = callback
 # TODO only subscription from callbacks are possible,
-#because client is not connected in this momen
+# because client is not connected in this momen
 
 #    Der MQTT Client ist noch nicht gestartet.
 #    Subscribe ist noch nicht möglich.
