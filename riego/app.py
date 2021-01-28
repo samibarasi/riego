@@ -15,10 +15,11 @@ import riego.mqtt_gmqtt as riego_mqtt
 import riego.logger
 import riego.timer
 import riego.boxes
+import riego.web.websockets
 
 from riego.web.routes import setup_routes
 from riego.web.error_pages import setup_error_pages
-from riego.web.websockets import setup_websockets
+#from riego.web.websockets import setup_websockets
 
 from aiohttp import web
 import jinja2
@@ -35,22 +36,17 @@ from riego.__init__ import __version__
 
 
 async def on_startup(app):
+    app['log'].debug("on_startup")
     if app['options'].enable_asyncio_debug:
         asyncio.get_event_loop().set_debug(True)
-    app['log'].info("on_startup")
-# TODO bring next two lines to correspondending classes
-#    app['background_mqtt'] = asyncio.create_task(app['mqtt'].start_async())
 
 
 async def on_shutdown(app):
-    app['log'].info("on_shutdown")
+    app['log'].debug("on_shutdown")
 
 
 async def on_cleanup(app):
-    app['log'].info("on_cleanup")
-
-#    app['background_mqtt'].cancel()
-#    await app['background_mqtt']
+    app['log'].debug("on_cleanup")
 
 
 async def alert_ctx_processor(request: web.Request) -> Dict[str, Any]:
@@ -105,18 +101,23 @@ def main():
           default="%Y-%m-%d %H:%M:%S")
     p.add('--mqtt_cmnd_prefix', help='',
           default="cmnd")
-    p.add('--mqtt_result_subscription', help='',
+    p.add('--mqtt_result_subscription', help='used by class valves',
           default="stat/+/RESULT")
     p.add('--mqtt_status_subscription', help='yet not used',
           default="stat/+/STATUS")
-    p.add('--mqtt_tele_subscription', help='yet not used',
-          default="tele/#")
-    p.add('--mqtt_tele_filter_LWT', help='yet not used',
+
+    p.add('--mqtt_lwt_subscription', help='used by class boxes',
           default="tele/+/LWT")
-    p.add('--mqtt_tele_filter_SENSOR',
-          help='yet not used', default="tele/+/SENSOR")
-    p.add('--mqtt_tele_filter_state', help='yet not used',
-          default="tele/+/state")
+    p.add('--mqtt_state_subscription', help='used by class boxes',
+          default="tele/+/STAE")
+    p.add('--mqtt_info1_subscription', help='used by class boxes',
+          default="tele/+/INFO1")
+    p.add('--mqtt_info2_subscription', help='used by class boxes',
+          default="tele/+/INFO2")
+
+    p.add('--mqtt_sensor_subscription', help='yet not used',
+          default="tele/+/SENSOR")
+
     p.add('--mqtt_keyword_ON', help='',
           default="ON")
     p.add('--mqtt_keyword_OFF', help='',
@@ -169,6 +170,7 @@ def main():
     app['options'] = options
     app['log'] = riego.logger.create_log(options)
     app['event_log'] = riego.logger.create_event_log(options)
+    app['websockets'] = riego.web.websockets.Websockets(app)
     app['db'] = riego.database.Database(app)
     app['mqtt'] = riego_mqtt.Mqtt(app)
     app['boxes'] = riego.boxes.Boxes(app)
@@ -190,10 +192,10 @@ def main():
 
     setup_routes(app)
     setup_error_pages(app)
-    setup_websockets(app)
 
     if options.enable_aiohttp_debug_toolbar:
-        aiohttp_debugtoolbar.setup(app, check_host=False,intercept_redirects=False)
+        aiohttp_debugtoolbar.setup(
+            app, check_host=False, intercept_redirects=False)
 
     app['log'].info("Start")
     app['event_log'].info('Start')

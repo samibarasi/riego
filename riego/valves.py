@@ -4,7 +4,7 @@ import json
 from sqlite3 import IntegrityError, Row
 from typing import Any
 
-import riego.web.websockets
+#import riego.web.websockets
 
 bool_to_int = {'true': 1, 'false': 0, True: 1, False: 0,
                'True': 1, 'False': 0, 'on': 1, 'off': 0,
@@ -29,22 +29,22 @@ class Valves():
         self._log = app['log']
         self._event_log = app['event_log']
         self._options = app['options']
+        self._websockets = app['websockets']
 
         self.__is_running = None
 
         # TODO Dependency Injection for websockets
-        riego.web.websockets.subscribe('valves', ws_handler)
+        self._websockets.subscribe('valves', self._ws_handler)
 
         self._mqtt.subscribe(self._options.mqtt_result_subscription,
                              self._mqtt_result_handler)
 
-    @classmethod
-    async def _ws_handler(msg: dict) -> None:
-        print(f'In Valves._ws_handler: {msg}')
-        #self._log.debug(f'In Valves._ws_handler: {msg}')
+    async def _ws_handler(self, msg: dict) -> None:
+        #        print(f'In Valves._ws_handler: {msg}')
+        self._log.debug(f'In Valves._ws_handler: {msg}')
         if msg['action'] == 'update':
             pass
-            # await self._update_by_key(msg['id'], msg['key'], msg['value'])
+            await self._update_by_key(msg['id'], msg['key'], msg['value'])
         return None
 
     async def _update_by_key(self, id: int, key: str, value: Any) -> None:

@@ -1,94 +1,78 @@
 from aiohttp import web
 import json
 
-__ws_list = None   # List of open websockets.
-__subscriptions = {}
-__log = None
 
+class Websockets():
+    def __init__(self, app):
+        self._log = app['log']
+        self._options = app['options']
 
-def setup_websockets(app) -> list:
-    global __ws_list
-    global __log
-    __log = app['log']
-    if not isinstance(__ws_list, list):
-        # very first run. We set up routes an install shutdown
-        __ws_list = []
-        app.router.add_get(app['options'].websocket_path,  _ws_handler)
-        app.on_shutdown.append(_my_shutdown)
-    return __ws_list
+        self._ws_list = []
+        self._subscriptions = {}
 
+        app.router.add_get(self._options.websocket_path, self._ws_handler)
+        app.on_shutdown.append(self.shutdown)
 
-async def send_to_all(msg: dict) -> None:
-    global __ws_list
-    for ws in __ws_list:
-        await ws.send_str(msg)
-    return None
+    async def send_to_all(self, msg: dict) -> None:
+        for ws in self._ws_list:
+            await ws.send_str(msg)
+        return None
 
+    def subscribe(self, model: str, callback: callable) -> None:
+        """Install a callback function for given model.
 
-def subscribe(model: str, callback: callable) -> None:
-    """Install a callback function for given model.
+        :param model: name of data model that asks for websocket
+        :type model: str
+        :param callback: callback function that is called when data arrives
+        :type callback: function with parameter msg
+        :return: None
+        :rtype: None
+        """
+        self._subscriptions[model] = callback
+        return None
 
-    :param model: name of data model that asks for websocket
-    :type model: str
-    :param callback: callback function that is called when data arrives
-    :type callback: function with parameter msg
-    :return: None
-    :rtype: None
-    """
-    global __subscriptions
-    __subscriptions[model] = callback
-    return None
+    async def _ws_handler(self, request) -> web.WebSocketResponse:
+        ws = web.WebSocketResponse()
+        await ws.prepare(request)
 
+        self._ws_list.append(ws)
 
-async def _ws_handler(request) -> web.WebSocketResponse:
-    global __subscriptions
-    global __log
-    global __ws_list
-    ws = web.WebSocketResponse()
-    await ws.prepare(request)
+    # Here possiblity to send init-message to Web-Client
 
-    __ws_list.append(ws)
+        try:
+            async for msg in ws:
+                self._log.debug(msg)
+                if msg.type == web.WSMsgType.TEXT:
+                    msg = json.loads(msg.data)
+                    await self._dispatch_message(msg)
+                else:
+                    break
+        except Exception as e:
+            self._log.error(f'websocket.py, exeption {e}')
+        finally:
+            self._log.debug(f'Finally ws remove: {ws}')
+            self._ws_list.remove(ws)
+        return ws
 
-# Here possiblity to send init-message to Web-Client
+    async def _dispatch_message(self, msg: dict) -> bool:
+        model = msg.get('model', None)
+        if model is None:
+            self._log.error(f'Message not for a data model: {msg}')
+            return False
+        callback_func = self._subscriptions.get(model, None)
+        if callback_func is None:
+            self._log.error(f'Message for an unknown data model: {msg}')
+            return False
+        try:
+            await callback_func(msg)
+        except Exception as e:
+            self._log.error(
+                f'websocket.py, exeption {e} in callable {callback_func}')
+            return False
+        return True
 
-    try:
-        async for msg in ws:
-            __log.debug(msg)
-            if msg.type == web.WSMsgType.TEXT:
-                msg = json.loads(msg.data)
-                await dispatch_message(msg)
-            else:
-                break
-    except Exception as e:
-        __log.error(f'websocket.py, exeption {e}')
-    finally:
-        __log.debug(f'Finally ws remove: {ws}')
-        __ws_list.remove(ws)
-    return ws
-
-
-async def dispatch_message(msg: dict) -> bool:
-    global __subscriptions
-    global __log
-    model = msg.get('model', None)
-    if model is None:
-        __log.error(f'Message not for a data model: {msg}')
-        return False
-    callback_func = __subscriptions.get(model, None)
-    if callback_func is None:
-        __log.error(f'Message for an unknown data model: {msg}')
-        return False
-    try:
-        await callback_func(msg)
-    except Exception as e:
-        __log.error(f'websocket.py, exeption {e} in callable {callback_func}')
-        return False
-    return True
-
-
-async def _my_shutdown(app) -> None:
-    global __ws_list
-    for ws in __ws_list:
-        __log.debug(f'calling ws.close for: {ws}')
-        await ws.close()
-    return None
+    async def shutdown(self, app) -> None:
+        for ws in self._ws_list:
+            self._log.debug(f'calling ws.close for: {ws}')
+            await ws.close()
+        return None
