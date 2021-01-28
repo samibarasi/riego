@@ -13,6 +13,15 @@ bool_to_int = {'true': 1, 'false': 0, True: 1, False: 0,
 int_to_js_bool = {1: "true", 0: "false", -1: "-1"}
 
 
+async def ws_handler(msg: dict) -> None:
+    print(f'In ws_handler: {msg}')
+    # self._log.debug(f'In Valves._ws_handler: {msg}')
+    if msg['action'] == 'update':
+        pass
+        # await self._update_by_key(msg['id'], msg['key'], msg['value'])
+    return None
+
+
 class Valves():
     def __init__(self, app):
         self._db_conn = app['db'].conn
@@ -24,15 +33,18 @@ class Valves():
         self.__is_running = None
 
         # TODO Dependency Injection for websockets
-        riego.web.websockets.subscribe('valves', self._ws_handler)
+        riego.web.websockets.subscribe('valves', ws_handler)
 
         self._mqtt.subscribe(self._options.mqtt_result_subscription,
                              self._mqtt_result_handler)
 
-    async def _ws_handler(self, msg: dict) -> None:
-        self._log.debug(f'In Valves._ws_handler: {msg}')
+    @classmethod
+    async def _ws_handler(msg: dict) -> None:
+        print(f'In Valves._ws_handler: {msg}')
+        #self._log.debug(f'In Valves._ws_handler: {msg}')
         if msg['action'] == 'update':
-            await self._update_by_key(msg['id'], msg['key'], msg['value'])
+            pass
+            # await self._update_by_key(msg['id'], msg['key'], msg['value'])
         return None
 
     async def _update_by_key(self, id: int, key: str, value: Any) -> None:
