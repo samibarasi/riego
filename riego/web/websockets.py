@@ -24,7 +24,7 @@ class Websockets():
         :param model: name of data model that asks for websocket
         :type model: str
         :param callback: callback function that is called when data arrives
-        :type callback: function with parameter msg
+        :type callback: function with parameters msg
         :return: None
         :rtype: None
         """

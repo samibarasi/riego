@@ -5,7 +5,7 @@ import asyncio
 class Timer():
     def __init__(self, app):
         self._valves = app['valves']
-        self._parameter = app['parameter']
+        self._parameters = app['parameters']
         self._options = app['options']
         self._log = app['log']
         self._mqtt = app['mqtt']
@@ -115,8 +115,8 @@ class Timer():
         self._stop = True
 
     async def _is_running_period(self) -> bool:
-        self._maxDuration = int(self._parameter.get('maxDuration'))
-        self._start_hour, self._start_minute = self._parameter.get(
+        self._maxDuration = int(self._parameters.get('maxDuration'))
+        self._start_hour, self._start_minute = self._parameters.get(
             'startTime').split(':')
         self._start_hour = int(self._start_hour)
         self._start_minute = int(self._start_minute)

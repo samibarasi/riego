@@ -10,7 +10,7 @@ from typing import Dict, Any
 
 import riego.database
 import riego.valves
-import riego.parameter
+import riego.parameters
 import riego.mqtt_gmqtt as riego_mqtt
 import riego.logger
 import riego.timer
@@ -174,7 +174,7 @@ def main():
     app['mqtt'] = riego_mqtt.Mqtt(app)
     app['boxes'] = riego.boxes.Boxes(app)
     app['valves'] = riego.valves.Valves(app)
-    app['parameter'] = riego.parameter.Parameter(app)
+    app['parameters'] = riego.parameters.parameters(app)
     app['timer'] = riego.timer.Timer(app)
 
     fernet_key = fernet.Fernet.generate_key()
