@@ -5,7 +5,7 @@
 
 {% block content %}
 
-{%for valve in valves if not valve.hide %}
+{%for valve in valves if not valve.is_hidden %}
 
 <div class="bg-light p-3 rounded">
     <h3>{{valve['name']}}</h3>

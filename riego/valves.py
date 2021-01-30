@@ -172,11 +172,11 @@ class Valves():
                 self._db_conn.execute(
                     '''UPDATE valves
                     SET name = ?, remark = ?, duration = ?,
-                    interval = ?, is_enabled = ?, hide = ?
+                    interval = ?, is_enabled = ?, is_hidden = ?
                     WHERE id = ?''',
                     (item['name'], item['remark'],
                      item['duration'], item['interval'],
-                     item['is_enabled'], item['hide'],
+                     item['is_enabled'], item['is_hidden'],
                      item_id))
         except IntegrityError:
             ret = False

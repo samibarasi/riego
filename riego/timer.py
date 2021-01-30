@@ -44,7 +44,7 @@ class Timer():
 
                 await asyncio.sleep(1)
                 continue
-            if valve['hide']:
+            if valve['is_hidden']:
                 valve = await self._valves.get_next(valve)
                 continue
             if not valve['is_enabled']:
