@@ -38,23 +38,7 @@ class Valves():
     async def _ws_handler(self, msg: dict) -> None:
         self._log.debug(f'In Valves._ws_handler: {msg}')
         if msg['action'] == 'update':
-            await self._update_by_key(msg['id'], msg['key'], msg['value'])
-        return None
-
-    async def _update_by_key(self, id: int, key: str, value: Any) -> None:
-        valve = await self.fetch_one_by_id(id)
-        if key == "is_running":
-            if bool_to_int.get(value, 0):
-                await self._set_on_try(valve)
-            else:
-                await self._set_off_try(valve)
-        else:
-            # TODO Data Typ Conversion possible needed
-            sql = f'UPDATE valves SET {key} = ? WHERE id = ?'
-            with self._db_conn:
-                self._db_conn.execute(sql, (value, id))
-        valve = await self.fetch_one_by_id(id)
-        await self._send_status_with_websocket(valve, key)
+            await self.update_by_key(msg['id'], msg['key'], msg['value'])
         return None
 
     async def _mqtt_result_handler(self, topic: str, payload: str) -> bool:
@@ -101,6 +85,15 @@ class Valves():
         await self._websockets.send_to_all(ret)
         return ret
 
+    async def _send_document_reload_with_websocket(self) -> json:
+        ret = {
+            'action': "reload",
+            'model': "valves",
+        }
+        ret = json.dumps(ret)
+        await self._websockets.send_to_all(ret)
+        return ret
+
     async def _send_mqtt(self, valve: Row, payload: str) -> bool:
         if self._mqtt.client is None:
             return False
@@ -112,7 +105,7 @@ class Valves():
         self._mqtt.client.publish(topic, payload)
         return True
 
-    async def _set_on_try(self, valve: Row) -> Row:
+    async def set_on_try(self, valve: Row) -> Row:
         with self._db_conn:
             self._db_conn.execute(
                 'UPDATE valves SET is_running = ? WHERE id = ?',
@@ -122,7 +115,7 @@ class Valves():
         await self._send_mqtt(valve, 1)
         return valve
 
-    async def _set_off_try(self, valve: Row) -> Row:
+    async def set_off_try(self, valve: Row) -> Row:
         with self._db_conn:
             self._db_conn.execute(
                 'UPDATE valves SET is_running = ? WHERE id = ?',
@@ -158,17 +151,18 @@ class Valves():
         return valve
 
     async def insert(self, item: dict) -> bool:
+        ret = True
         try:
             with self._db_conn:
-                cursor = self._db_conn.execute(
+                self._db_conn.execute(
                     '''INSERT INTO valves
                     (name, box_id, topic)
                     VALUES (?, ?, ?)''',
                     (item['name'], item['box_id'], item['topic']))
         except IntegrityError:
-            ret = None
+            ret = False
         else:
-            ret = cursor.lastrowid
+            await self._send_document_reload_with_websocket()
         return ret
 
     async def update(self, item_id: int, item: dict) -> bool:
@@ -186,6 +180,30 @@ class Valves():
                      item_id))
         except IntegrityError:
             ret = False
+        else:
+            await self._send_document_reload_with_websocket()
+        return ret
+
+    async def update_by_key(self, id: int, key: str, value: Any) -> bool:
+        ret = True
+        valve = await self.fetch_one_by_id(id)
+        if key == "is_running":
+            if bool_to_int.get(value, 0):
+                await self.set_on_try(valve)
+            else:
+                await self.set_off_try(valve)
+        else:
+            # TODO Data Typ Conversion possible needed
+            sql = f'UPDATE valves SET {key} = ? WHERE id = ?'
+            try:
+                with self._db_conn:
+                    self._db_conn.execute(sql, (value, id))
+            except IntegrityError:
+                ret = False
+            else:
+                valve = await self.fetch_one_by_id(id)
+                await self._send_status_with_websocket(valve, key)
+                await self._send_document_reload_with_websocket()
         return ret
 
     async def delete(self, item_id: int) -> None:
@@ -199,6 +217,7 @@ class Valves():
             # lastrowid is in every case 0,
             # Exception is not raised
             pass
+        await self._send_document_reload_with_websocket()
         return None
 
     async def fetch_one_by_key(self, key: str, value: Any) -> Row:
@@ -233,3 +252,19 @@ class Valves():
         ret = c.fetchall()
         self._db_conn.commit()
         return ret
+
+    async def get_next(self, valve: Row) -> Row:
+        valves = await self.fetch_all()
+        count_valves = len(valves)
+        if count_valves == 0:
+            return None
+        if valve is None:
+            return valves[0]
+        if count_valves == 1:
+            return valves[0]
+        for i in range(count_valves):
+            if i == count_valves-1:
+                return valves[0]
+            if valve['id'] == valves[i]['id']:
+                return valves[i+1]
+        return None

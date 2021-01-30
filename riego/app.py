@@ -173,7 +173,6 @@ def main():
     app['db'] = riego.database.Database(app)
     app['mqtt'] = riego_mqtt.Mqtt(app)
     app['boxes'] = riego.boxes.Boxes(app)
-# boxes evtl. vor den Valves starten => MQTT -LWT nachrichten
     app['valves'] = riego.valves.Valves(app)
     app['parameter'] = riego.parameter.Parameter(app)
     app['timer'] = riego.timer.Timer(app)
