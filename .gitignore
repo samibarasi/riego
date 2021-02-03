@@ -10,6 +10,10 @@ db/*
 /tt.py
 /upload.bat
 
+/mqtt_mqtools.py
+/mqtt_paho_loop_example.py
+/mqtt_paho.py
+
 
 # Setuptools distribution folder.
 /dist/

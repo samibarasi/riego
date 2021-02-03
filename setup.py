@@ -18,6 +18,7 @@ setuptools.setup(
     install_requires=[
         'gmqtt',
         'ConfigArgParse',
+        'sqlalchemy',
         'yoyo-migrations',
         'aiohttp',
         'aiohttp_jinja2',

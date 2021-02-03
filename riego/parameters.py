@@ -1,9 +1,10 @@
+from riego.model.parameter import Parameter
 
 
-class parameters:
+class Parameters:
     def __init__(self, app):
-        self.db_conn = app['db'].conn
-        self.mqtt = app['mqtt']
+        self._db = app['db']
+        self._Parameter = Parameter()
 
     def get(self, key):
         c = self.db_conn.cursor()

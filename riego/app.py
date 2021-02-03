@@ -8,15 +8,16 @@ import pathlib
 import socket
 from typing import Dict, Any
 
-import riego.database
-import riego.valves
-import riego.parameters
-import riego.mqtt_gmqtt as riego_mqtt
 import riego.logger
-import riego.timer
+from riego.model.base import Database
+import riego.mqtt_gmqtt as riego_mqtt
 import riego.boxes
-import riego.web.websockets
+import riego.valves
+#import riego.parameters
+#import riego.timer
 
+
+from riego.web.websockets import Websockets
 from riego.web.routes import setup_routes
 from riego.web.error_pages import setup_error_pages
 
@@ -102,13 +103,11 @@ def main():
           default="cmnd")
     p.add('--mqtt_result_subscription', help='used by class valves',
           default="stat/+/RESULT")
-    p.add('--mqtt_status_subscription', help='yet not used',
-          default="stat/+/STATUS")
 
     p.add('--mqtt_lwt_subscription', help='used by class boxes',
           default="tele/+/LWT")
     p.add('--mqtt_state_subscription', help='used by class boxes',
-          default="tele/+/STAE")
+          default="tele/+/STATE")
     p.add('--mqtt_info1_subscription', help='used by class boxes',
           default="tele/+/INFO1")
     p.add('--mqtt_info2_subscription', help='used by class boxes',
@@ -169,13 +168,13 @@ def main():
     app['options'] = options
     app['log'] = riego.logger.create_log(options)
     app['event_log'] = riego.logger.create_event_log(options)
-    app['websockets'] = riego.web.websockets.Websockets(app)
-    app['db'] = riego.database.Database(app)
+    app['websockets'] = Websockets(app)
+    app['db'] = Database(app)
     app['mqtt'] = riego_mqtt.Mqtt(app)
     app['boxes'] = riego.boxes.Boxes(app)
     app['valves'] = riego.valves.Valves(app)
-    app['parameters'] = riego.parameters.parameters(app)
-    app['timer'] = riego.timer.Timer(app)
+#    app['parameters'] = riego.parameters.Parameters(app)
+#    app['timer'] = riego.timer.Timer(app)
 
     fernet_key = fernet.Fernet.generate_key()
     secret_key = base64.urlsafe_b64decode(fernet_key)

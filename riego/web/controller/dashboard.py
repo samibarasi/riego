@@ -1,6 +1,8 @@
 import aiohttp_jinja2
 from aiohttp_session import get_session
 
+from riego.model.valves import Valve
+
 
 @aiohttp_jinja2.template('dashboard/index.html')
 async def dashboard_index(request):
@@ -9,5 +11,7 @@ async def dashboard_index(request):
                         'heading': 'Danger!',
                         'text': 'lorem ipsum'}
     session.changed()
-    valves = await request.app['valves'].fetch_all()
-    return {'valves': valves}
+    session = request.app['db'].Session()
+    items = session.query(Valve).all()
+    session.close()
+    return {'valves': items}

@@ -9,7 +9,6 @@
 <form action="/valves/{{ item['id'] }}/edit" method="POST"
       enctype="multipart/form-data">
 
-
       <div class="mb-3">
         <label for="id1" class="form-label">name</label>
         <input id="id1" name="name" value="{{item['name']}}"  type="text" class="form-control">
@@ -46,8 +45,8 @@
       </div>
 
       <div class="mb-3">
-        <label for="id7" class="form-label">channel_nr</label>
-        <input id="id7" name="is_hidden" value="{{item['channel_nr']}}"  type="text" class="form-control">
+        <label for="id7" class="form-label">prio</label>
+        <input id="id7" name="prio" value="{{item['prio']}}"  type="text" class="form-control">
       </div>
 
 
