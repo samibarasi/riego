@@ -4,8 +4,9 @@ from sqlalchemy import (
     Integer, String, DateTime
 )
 from sqlalchemy.orm import relationship
-from riego.model.base import Base
+from sqlalchemy.sql import func
 
+from riego.model.base import Base
 from riego.model.events import Event
 
 
@@ -24,7 +25,7 @@ class Valve(Base):
     is_hidden = Column(Integer, default=1)
     prio = Column(Integer, default=9)
     box_id = Column(Integer, ForeignKey('boxes.id'), nullable=False)
-    created_at = Column(DateTime, default=datetime.now())
+    created_at = Column(DateTime, default=func.now())
     events = relationship(Event, backref='valve',
                           cascade="all, delete, delete-orphan")
 
@@ -33,5 +34,4 @@ class Valve(Base):
     )
 
     def __repr__(self):
-        return "<Valve(name='%s', id='%s', last_run='%s')>" % (
-            self.name, self.id, self.last_run)
+        return "<Valve(name='%s', id='%s')>" % (self.name, self.id)

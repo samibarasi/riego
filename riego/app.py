@@ -12,7 +12,7 @@ import riego.logger
 from riego.model.base import Database
 import riego.mqtt_gmqtt as riego_mqtt
 import riego.boxes
-import riego.valves
+#import riego.valves
 #import riego.parameters
 #import riego.timer
 
@@ -167,12 +167,12 @@ def main():
     app['version'] = __version__
     app['options'] = options
     app['log'] = riego.logger.create_log(options)
-    app['event_log'] = riego.logger.create_event_log(options)
+#    app['event_log'] = riego.logger.create_event_log(options)
     app['websockets'] = Websockets(app)
     app['db'] = Database(app)
     app['mqtt'] = riego_mqtt.Mqtt(app)
     app['boxes'] = riego.boxes.Boxes(app)
-    app['valves'] = riego.valves.Valves(app)
+#    app['valves'] = riego.valves.Valves(app)
 #    app['parameters'] = riego.parameters.Parameters(app)
 #    app['timer'] = riego.timer.Timer(app)
 
@@ -195,7 +195,6 @@ def main():
             app, check_host=False, intercept_redirects=False)
 
     app['log'].info("Start")
-    app['event_log'].info('Start')
 
     web.run_app(app,
                 host=options.http_server_bind_address,

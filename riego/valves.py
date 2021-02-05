@@ -18,10 +18,8 @@ int_to_js_bool = {1: "true", 0: "false", -1: "-1"}
 class Valves():
     def __init__(self, app):
         self._db = app['db']
-        self._Valve = Valve()
         self._mqtt = app['mqtt']
         self._log = app['log']
-        self._event_log = app['event_log']
         self._options = app['options']
         self._websockets = app['websockets']
 
@@ -116,6 +114,7 @@ class Valves():
         session = self._db.Session()
         valve = session.query(Valve).get(valve_id)
         valve.is_running = -1
+
         await self._send_status_ws(valve_id=valve_id,
                                    key='is_running',
                                    value=-1)
@@ -130,14 +129,14 @@ class Valves():
         session = self._db.Session()
         valve = session.query(Valve).get(valve_id)
         valve.is_running = -1
+        session.commit()
+        session.close()
         await self._send_status_ws(valve_id=valve_id,
                                    key='is_running',
                                    value=-1)
         await self._send_mqtt(box_topic=valve.box.topic,
                               channel_nr=valve.channel_nr,
                               payload=self._options.mqtt_keyword_OFF)
-        session.commit()
-        session.close()
         return None
 
     async def _set_on_confirm(self, box_topic=None, channel_nr=None) -> None:
@@ -149,16 +148,16 @@ class Valves():
             return
         valve.is_running = 1
         self._log.info(f'Valve switched to ON: {valve.name}')
-        await self._send_status_ws(valve_id=valve.id,
-                                   key='is_running',
-                                   value=valve.is_running)
         event = Event()
         valve.events.append(event)
         session.commit()
         session.close()
+        await self._send_status_ws(valve_id=valve.id,
+                                   key='is_running',
+                                   value=valve.is_running)
         return None
 
-    async def _set_off_confirm(self,  box_topic=None, channel_nr=None) -> None:
+    async def _set_off_confirm(self, box_topic=None, channel_nr=None) -> None:
         session = self._db.Session()
         valve = session.query(Valve).filter(Box.topic == box_topic,
                                             Valve.channel_nr == channel_nr).first()  # noqa: E501
@@ -166,18 +165,17 @@ class Valves():
             session.close()
             return
         valve.is_running = 0
+        event = session.query(Event).filter(
+            Event.valve_id == valve.id, Event.duration == 0).order_by(Event.created_at.desc()).first()  # noqa: E501
+        if event is not None:
+            duration = datetime.now() - event.created_at
+            duration = duration.total_seconds() / 60.0
+            event.duration = round(duration)
+        session.commit()
+        session.close()
         self._log.info(f'Valve switched to OFF: {valve.name}')
         await self._send_status_ws(valve_id=valve.id, key='is_running',
                                    value=valve.is_running)
-
-        event = session.query(Event).filter(
-            Event.valve_id == valve.id, Event.duration == 0).order_by(Event.created_at.desc()).first()  # noqa: E501
-
-        duration = datetime.now() - event.created_at
-        duration = duration.total_seconds() / 60.0
-        event.duration = duration
-        session.commit()
-        session.close()
         return None
 
     async def update_by_key(self, valve_id=None, key=None, value=None) -> bool:

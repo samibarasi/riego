@@ -2,7 +2,9 @@ from riego.web.controller.dashboard import dashboard_index
 
 from riego.web.controller.boxes import register_router as setup_boxes
 from riego.web.controller.valves import register_router as setup_valves
+from riego.web.controller.events import register_router as setup_events
 from riego.web.controller.system import register_router as setup_system
+
 
 routes = [
     ('GET', '/',                    dashboard_index,      'dashboard_index'),
@@ -20,4 +22,5 @@ def setup_routes(app):
 
     setup_boxes(app)
     setup_valves(app)
+    setup_events(app)
     setup_system(app)

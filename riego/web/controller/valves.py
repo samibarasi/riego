@@ -80,13 +80,13 @@ async def edit_apply(request: web.Request) -> web.Response:
     try:
         session.commit()
     except IntegrityError as e:
-        session.close()
-        request.app['log'].debug(f'valve.view edit: {e}')
-        raise web.HTTPSeeOther(location=f"/valves/{item_id}")
-    else:
         session.rollback()
         session.close()
+        request.app['log'].debug(f'valve.view edit: {e}')
         raise web.HTTPSeeOther(location=f"/valves/{item_id}/edit")
+    else:
+        session.close()
+        raise web.HTTPSeeOther(location=f"/valves/{item_id}")
     return {}  # Not reached
 
 

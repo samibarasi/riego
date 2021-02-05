@@ -1,11 +1,9 @@
-from datetime import datetime
-
-
 from sqlalchemy import (
     Column, UniqueConstraint,
     Integer, String, DateTime
 )
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
 from riego.model.base import Base
 from riego.model.valves import Valve
@@ -16,12 +14,11 @@ class Box(Base):
 
     id = Column(Integer, primary_key=True)
     topic = Column(String)
-    name = Column(String)
-    hostname = Column(String)
-    remark = Column(String)
-    config_version = Column(String)
-    first_seen = Column(DateTime, default=datetime.now())
-    online_since = Column(DateTime, default=datetime.now())
+    name = Column(String, default='')
+    hostname = Column(String, default='')
+    remark = Column(String, default='')
+    first_seen = Column(DateTime, default=func.now())
+    online_since = Column(DateTime, default=func.now())
     hw_type = Column(String)
     hw_version = Column(String)
     sw_type = Column(String)
@@ -29,7 +26,7 @@ class Box(Base):
     fallback_topic = Column(String)
     group_topic = Column(String)
     ip_address = Column(String)
-    created_at = Column(DateTime, default=datetime.now())
+    created_at = Column(DateTime, default=func.now())
     valves = relationship(Valve, backref='box',
                           cascade="all, delete, delete-orphan")
 

@@ -109,7 +109,7 @@ class Boxes():
         :return: [description]
         :rtype: bool
         """
-        self._log.debug(f'Info: {topic}, payload: {payload}')
+        self._log.debug(f'Info1: {topic}, payload: {payload}')
         box_topic = re.search('/(.*?)/', topic).group(1)
 
         payload = json.loads(payload)
@@ -149,7 +149,7 @@ class Boxes():
         :return: [description]
         :rtype: bool
         """
-        self._log.debug(f'Info: {topic}, payload: {payload}')
+        self._log.debug(f'Info2: {topic}, payload: {payload}')
         box_topic = re.search('/(.*?)/', topic).group(1)
 
         payload = json.loads(payload)
