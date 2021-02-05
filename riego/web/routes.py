@@ -1,13 +1,13 @@
-from riego.web.controller.dashboard import dashboard_index
+from riego.web.views.dashboard import dashboard_index
 
-from riego.web.controller.boxes import register_router as setup_boxes
-from riego.web.controller.valves import register_router as setup_valves
-from riego.web.controller.events import register_router as setup_events
-from riego.web.controller.system import register_router as setup_system
+from riego.web.views.boxes import register_router as setup_boxes
+from riego.web.views.valves import register_router as setup_valves
+from riego.web.views.events import register_router as setup_events
+from riego.web.views.system import register_router as setup_system
 
 
 routes = [
-    ('GET', '/',                    dashboard_index,      'dashboard_index'),
+    ('GET', '/',   dashboard_index,      'dashboard_index'),
 ]
 
 
