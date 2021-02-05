@@ -9,7 +9,7 @@ import socket
 from typing import Dict, Any
 
 import riego.logger
-from riego.model.base import Database
+
 import riego.mqtt_gmqtt as riego_mqtt
 import riego.boxes
 #import riego.valves
@@ -17,9 +17,11 @@ import riego.boxes
 #import riego.timer
 
 
+from riego.db import Db
 from riego.web.websockets import Websockets
 from riego.web.routes import setup_routes
 from riego.web.error_pages import setup_error_pages
+
 
 from aiohttp import web
 import jinja2
@@ -32,7 +34,7 @@ from aiohttp_session import setup as setup_session, get_session
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 
 
-from riego.__init__ import __version__
+from riego import __version__
 
 
 async def on_startup(app):
@@ -64,8 +66,11 @@ def main():
                               'riego.conf'])
     p.add('-c', '--config', is_config_file=True, env_var='RIEGO_CONF',
           required=False, help='config file path')
-    p.add('-d', '--database', help='Path and name for DB file',
+    p.add('-d', '--db_filename', help='Path and name for DB file',
           default='db/riego.db')
+    p.add('--db_migrations_dir',
+          help='path to database migrations directory',
+          default=pkg_resources.resource_filename('riego', 'migrations'))
     p.add('-e', '--event_log', help='Full path and name for event logfile',
           default='log/event.log')
     p.add('--event_log_max_bytes', help='Maximum Evet Log Size in bytes',
@@ -80,9 +85,6 @@ def main():
           default=f'riego_ctrl_{socket.gethostname()}')
     p.add('--mqtt_subscription_topic', help='MQTT Topic that we are listening',
           default='riego/#')
-    p.add('--database_migrations_dir',
-          help='path to database migrations directory',
-          default=pkg_resources.resource_filename('riego', 'migrations'))
     p.add('--base_dir', help='Change only if you know what you are doing',
           default=pathlib.Path(__file__).parent)
     p.add('--http_server_bind_address',
@@ -169,7 +171,7 @@ def main():
     app['log'] = riego.logger.create_log(options)
 #    app['event_log'] = riego.logger.create_event_log(options)
     app['websockets'] = Websockets(app)
-    app['db'] = Database(app)
+    app['db'] = Db(app)
     app['mqtt'] = riego_mqtt.Mqtt(app)
     app['boxes'] = riego.boxes.Boxes(app)
 #    app['valves'] = riego.valves.Valves(app)
