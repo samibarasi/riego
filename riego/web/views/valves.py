@@ -11,6 +11,10 @@ _log = getLogger(__name__)
 router = web.RouteTableDef()
 
 
+def setup_routes_valves(app):
+    app.add_routes(router)
+
+
 @router.get("/valves")
 @aiohttp_jinja2.template("valves/index.html")
 async def index(request: web.Request) -> Dict[str, Any]:
@@ -114,7 +118,3 @@ async def delete(request: web.Request) -> web.Response:
         _log.debug(f'box.view delete: {e}')
     raise web.HTTPSeeOther(location="/valves")
     return {}  # Not reached
-
-
-def register_router(app):
-    app.add_routes(router)

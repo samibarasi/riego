@@ -11,7 +11,7 @@ _log = getLogger(__name__)
 router = web.RouteTableDef()
 
 
-def register_router(app):
+def setup_routes_boxes(app):
     app.add_routes(router)
 
 

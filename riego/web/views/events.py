@@ -7,6 +7,10 @@ from riego.db import get_db
 router = web.RouteTableDef()
 
 
+def setup_routes_events(app):
+    app.add_routes(router)
+
+
 @router.get("/events")
 @aiohttp_jinja2.template('events/index.html')
 async def system_event_log(request):
@@ -17,7 +21,3 @@ async def system_event_log(request):
     items = c.fetchall()
     get_db().conn.commit()
     return {'items': items}
-
-
-def register_router(app):
-    app.add_routes(router)

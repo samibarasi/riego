@@ -12,6 +12,10 @@ from pkg_resources import packaging
 router = web.RouteTableDef()
 
 
+def setup_routes_system(app):
+    app.add_routes(router)
+
+
 @router.get("/system")
 @aiohttp_jinja2.template('system/index.html')
 async def system_index(request):
@@ -59,10 +63,6 @@ async def system_event_log(request):
 async def system_exc(request):
     raise NotImplementedError
     return {}
-
-
-def register_router(app):
-    app.add_routes(router)
 
 
 async def _check_installed():

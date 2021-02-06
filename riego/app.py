@@ -3,24 +3,17 @@ import configargparse
 import pkg_resources
 import os
 from pathlib import Path
-# import logging
-# import sys
 import socket
 from typing import Dict, Any
 
 import logging
-# from logging import (getLogger, Formatter, StreamHandler,
-#                     basicConfig, DEBUG, INFO)
 from logging.handlers import RotatingFileHandler
 
 from riego.db import setup_db
-from riego.mqtt_gmqtt import setup_mqtt
+from riego.mqtt import setup_mqtt
 from riego.boxes import setup_boxes
 from riego.valves import setup_valves
 from riego.timer import setup_timer
-# import riego.valves
-# import riego.parameters
-# import riego.timer
 
 
 from riego.web.websockets import setup_websockets

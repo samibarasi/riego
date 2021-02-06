@@ -1,10 +1,10 @@
 from riego.web.views.dashboard import Dashboard
 
 
-from riego.web.views.boxes import register_router as setup_boxes
-from riego.web.views.valves import register_router as setup_valves
-from riego.web.views.events import register_router as setup_events
-from riego.web.views.system import register_router as setup_system
+from riego.web.views.boxes import setup_routes_boxes
+from riego.web.views.valves import setup_routes_valves
+from riego.web.views.events import setup_routes_events
+from riego.web.views.system import setup_routes_system
 
 
 def setup_routes(app):
@@ -20,7 +20,7 @@ def setup_routes(app):
     app.router.add_static('/static', app['options'].http_server_static_dir,
                           name='static', show_index=True)
 
-    setup_boxes(app)
-    setup_valves(app)
-    setup_events(app)
-    setup_system(app)
+    setup_routes_boxes(app)
+    setup_routes_valves(app)
+    setup_routes_events(app)
+    setup_routes_system(app)
