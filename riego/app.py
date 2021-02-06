@@ -87,22 +87,15 @@ def main():
 
     app['version'] = __version__
     app['options'] = options
-#    app['log'] = getLogger()
-#    app['event_log'] = riego.logger.create_event_log(options)
-    # app['websockets'] = Websockets(app=app, option=options)
 
     websockets = setup_websockets(app=app, options=options)
     db = setup_db(options=options)
     mqtt = setup_mqtt(app=app, options=options)
-    boxes = setup_boxes(options=options, db=db, mqtt=mqtt)
+    setup_boxes(options=options, db=db, mqtt=mqtt)
     valves = setup_valves(options=options, db=db,
                           mqtt=mqtt, websockets=websockets)
-    timer = setup_timer(app=app, options=options, db=db,
-                        mqtt=mqtt, valves=valves)
-#    app['boxes'] = riego.boxes.Boxes(app)
-#    app['valves'] = riego.valves.Valves(app)
-#    app['parameters'] = riego.parameters.Parameters(app)
-#    app['timer'] = riego.timer.Timer(app)
+    setup_timer(app=app, options=options, db=db,
+                mqtt=mqtt, valves=valves)
 
     fernet_key = fernet.Fernet.generate_key()
     secret_key = base64.urlsafe_b64decode(fernet_key)

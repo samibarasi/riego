@@ -57,7 +57,7 @@ class Timer():
             self._db_conn.commit()
             for valve in valves:
                 await self._dispatch_valve(valve)
-            print (f'cur_valve_run: {self._current_valve_running}')
+            print(f'cur_valve_run: {self._current_valve_running}')
         if valve is not None:
             await self._valves.set_off_try(valve['id'])
         return None
@@ -126,9 +126,9 @@ class Timer():
                         (datetime.now(), valve['id']))
             except IntegrityError as e:
                 pass
-#                _log.error(f'update for last_shedule failed: {e}')
+                _log.error(f'update for last_shedule failed: {e}')
                 return False
-#            _log.debug('valveOn: {}'.format(valve['name']))
+            _log.debug('valveOn: {}'.format(valve['name']))
         return ret
 
     def _shutdown(self, task) -> None:

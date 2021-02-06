@@ -93,7 +93,7 @@ class Valves():
     async def _send_status_ws(self, valve_id=None, key=None, value=None):
         ret = {
             'action': "status",
-            'model': "valves",
+            'scope': "valves",
             'id': valve_id,
             'key': key,
             'value': value,
@@ -105,7 +105,7 @@ class Valves():
     async def _send_document_reload_ws(self) -> None:
         ret = {
             'action': "reload",
-            'model': "valves",
+            'scope': "valves",
         }
         ret = json.dumps(ret)
         await self._websockets.send_to_all(ret)

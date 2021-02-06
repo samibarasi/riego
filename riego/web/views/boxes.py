@@ -108,7 +108,3 @@ async def delete(request: web.Request) -> web.Response:
         _log.debug(f'box.view delete: {e}')
     raise web.HTTPSeeOther(location="/boxes")
     return {}  # Not reached
-
-
-def register_router(app):
-    app.add_routes(router)

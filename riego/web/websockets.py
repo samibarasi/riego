@@ -76,13 +76,13 @@ class Websockets():
         return ws
 
     async def _dispatch_message(self, msg: dict) -> bool:
-        model = msg.get('model', None)
+        model = msg.get('scope', None)
         if model is None:
-            _log.error(f'Message not for a data model: {msg}')
+            _log.error(f'Message not for a scope: {msg}')
             return False
         callback_func = self._subscriptions.get(model, None)
         if callback_func is None:
-            _log.error(f'Message for an unknown data model: {msg}')
+            _log.error(f'Message for an unknown scope: {msg}')
             return False
         try:
             await callback_func(msg)
