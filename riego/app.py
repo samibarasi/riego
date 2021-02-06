@@ -2,23 +2,27 @@ import asyncio
 import configargparse
 import pkg_resources
 import os
-import pathlib
+from pathlib import Path
 # import logging
 # import sys
 import socket
 from typing import Dict, Any
 
-import riego.logger
+import logging
+# from logging import (getLogger, Formatter, StreamHandler,
+#                     basicConfig, DEBUG, INFO)
+from logging.handlers import RotatingFileHandler
 
-import riego.mqtt_gmqtt as riego_mqtt
-import riego.boxes
-#import riego.valves
-#import riego.parameters
-#import riego.timer
+from riego.db import setup_db
+from riego.mqtt_gmqtt import setup_mqtt
+from riego.boxes import setup_boxes
+from riego.valves import setup_valves
+# import riego.valves
+# import riego.parameters
+# import riego.timer
 
 
-from riego.db import Db
-from riego.web.websockets import Websockets
+from riego.web.websockets import setup_websockets
 from riego.web.routes import setup_routes
 from riego.web.error_pages import setup_error_pages
 
@@ -37,20 +41,6 @@ from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from riego import __version__
 
 
-async def on_startup(app):
-    app['log'].debug("on_startup")
-    if app['options'].enable_asyncio_debug:
-        asyncio.get_event_loop().set_debug(True)
-
-
-async def on_shutdown(app):
-    app['log'].debug("on_shutdown")
-
-
-async def on_cleanup(app):
-    app['log'].debug("on_cleanup")
-
-
 async def alert_ctx_processor(request: web.Request) -> Dict[str, Any]:
     # Jinja2 context processor
     session = await get_session(request)
@@ -61,6 +51,103 @@ async def alert_ctx_processor(request: web.Request) -> Dict[str, Any]:
 
 
 def main():
+    options = _get_options()
+
+    _setup_logging(options=options)
+
+    try:
+        with open('riego.conf', 'xt') as f:
+            for item in vars(options):
+                f.write(f'# {item}={getattr(options, item)}\n')
+    except IOError:
+        pass
+
+    if options.defaults:
+        for item in vars(options):
+            print(f'# {item}={getattr(options, item)}')
+        exit(0)
+
+    if options.version:
+        print('Version: ', __version__)
+        exit(0)
+
+#    if sys.version_info >= (3, 8):
+#        asyncio.DefaultEventLoopPolicy = asyncio.WindowsSelectorEventLoopPolicy  # noqa: E501
+
+    if os.name == "posix":
+        import uvloop  # pylint: disable=import-error
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+
+    app = web.Application()
+
+    app.on_startup.append(on_startup)
+    app.on_shutdown.append(on_shutdown)
+    app.on_cleanup.append(on_cleanup)
+
+    app['version'] = __version__
+    app['options'] = options
+#    app['log'] = getLogger()
+#    app['event_log'] = riego.logger.create_event_log(options)
+    # app['websockets'] = Websockets(app=app, option=options)
+
+    websockets = setup_websockets(app=app, options=options)
+    db = setup_db(options=options)
+    mqtt = setup_mqtt(app=app, options=options)
+    boxes = setup_boxes(options=options, db=db, mqtt=mqtt)
+    valves = setup_valves(options=options, db=db,
+                          mqtt=mqtt, websockets=websockets)
+#    app['boxes'] = riego.boxes.Boxes(app)
+#    app['valves'] = riego.valves.Valves(app)
+#    app['parameters'] = riego.parameters.Parameters(app)
+#    app['timer'] = riego.timer.Timer(app)
+
+    fernet_key = fernet.Fernet.generate_key()
+    secret_key = base64.urlsafe_b64decode(fernet_key)
+    setup_session(app, EncryptedCookieStorage(secret_key))
+
+    loader = jinja2.FileSystemLoader(options.http_server_template_dir)
+    aiohttp_jinja2.setup(app,
+                         loader=loader,
+                         # enable_async=True,
+                         # context_processors=[alert_ctx_processor],
+                         )
+
+    setup_routes(app)
+    setup_error_pages(app)
+
+    if options.enable_aiohttp_debug_toolbar:
+        aiohttp_debugtoolbar.setup(
+            app, check_host=False, intercept_redirects=False)
+
+    logging.getLogger(__name__).info("Start")
+
+    web.run_app(app,
+                host=options.http_server_bind_address,
+                port=options.http_server_bind_port)
+
+
+def _setup_logging(options=None):
+    formatter = logging.Formatter(
+        "%(asctime)s;%(levelname)s;%(name)s;%(message)s ")
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    if options.verbose:
+        level = logging.DEBUG
+    else:
+        level = logging.INFO
+    file_handler = RotatingFileHandler(options.log_file, mode='a',
+                                       maxBytes=options.log_max_bytes,
+                                       backupCount=options.log_backup_count,
+                                       encoding=None, delay=0)
+    file_handler.setFormatter(formatter)
+    Path(options.log_file).parent.mkdir(parents=True, exist_ok=True)
+    logging.basicConfig(level=level, handlers=[stream_handler, file_handler])
+
+    logging.getLogger("gmqtt").setLevel(logging.ERROR)
+    logging.getLogger("aiohttp.access").setLevel(logging.ERROR)
+
+
+def _get_options():
     p = configargparse.ArgParser(
         default_config_files=['/etc/riego/conf.d/*.conf', '~/.riego.conf',
                               'riego.conf'])
@@ -71,11 +158,11 @@ def main():
     p.add('--db_migrations_dir',
           help='path to database migrations directory',
           default=pkg_resources.resource_filename('riego', 'migrations'))
-    p.add('-e', '--event_log', help='Full path and name for event logfile',
-          default='log/event.log')
-    p.add('--event_log_max_bytes', help='Maximum Evet Log Size in bytes',
+    p.add('-l', '--log_file', help='Full path to logfile',
+          default='log/riego.log')
+    p.add('--log_max_bytes', help='Maximum Evet Log Size in bytes',
           default=1024*300, type=int)
-    p.add('--event_log_backup_count', help='How many files to rotate',
+    p.add('--log_backup_count', help='How many files to rotate',
           default=3, type=int)
     p.add('-m', '--mqtt_host', help='IP adress of mqtt host',
           default='127.0.0.1')
@@ -86,7 +173,7 @@ def main():
     p.add('--mqtt_subscription_topic', help='MQTT Topic that we are listening',
           default='riego/#')
     p.add('--base_dir', help='Change only if you know what you are doing',
-          default=pathlib.Path(__file__).parent)
+          default=Path(__file__).parent)
     p.add('--http_server_bind_address',
           help='http-server bind address', default='0.0.0.0')
     p.add('--http_server_bind_port', help='http-server bind port',
@@ -133,71 +220,21 @@ def main():
           action='store_true')
 
     options = p.parse_args()
-
-    try:
-        with open('riego.conf', 'xt') as f:
-            for item in vars(options):
-                f.write(f'# {item}={getattr(options, item)}\n')
-    except IOError:
-        pass
-
-    if options.defaults:
-        for item in vars(options):
-            print(f'# {item}={getattr(options, item)}')
-        exit(0)
-
-    if options.version:
-        print('Version: ', __version__)
-        exit(0)
-
     if options.verbose:
         print(p.format_values())
 
-#    if sys.version_info >= (3, 8):
-#        asyncio.DefaultEventLoopPolicy = asyncio.WindowsSelectorEventLoopPolicy  # noqa: E501
+    return options
 
-    if os.name == "posix":
-        import uvloop  # pylint: disable=import-error
-        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
-    app = web.Application()
+async def on_startup(app):
+    logging.getLogger(__name__).debug("on_startup")
+    if app['options'].enable_asyncio_debug:
+        asyncio.get_event_loop().set_debug(True)
 
-    app.on_startup.append(on_startup)
-    app.on_shutdown.append(on_shutdown)
-    app.on_cleanup.append(on_cleanup)
 
-    app['version'] = __version__
-    app['options'] = options
-    app['log'] = riego.logger.create_log(options)
-#    app['event_log'] = riego.logger.create_event_log(options)
-    app['websockets'] = Websockets(app)
-    app['db'] = Db(app)
-    app['mqtt'] = riego_mqtt.Mqtt(app)
-    app['boxes'] = riego.boxes.Boxes(app)
-#    app['valves'] = riego.valves.Valves(app)
-#    app['parameters'] = riego.parameters.Parameters(app)
-#    app['timer'] = riego.timer.Timer(app)
+async def on_shutdown(app):
+    logging.getLogger(__name__).debug("on_shutdown")
 
-    fernet_key = fernet.Fernet.generate_key()
-    secret_key = base64.urlsafe_b64decode(fernet_key)
-    setup_session(app, EncryptedCookieStorage(secret_key))
 
-    loader = jinja2.FileSystemLoader(options.http_server_template_dir)
-    aiohttp_jinja2.setup(app,
-                         loader=loader,
-                         # enable_async=True,
-                         # context_processors=[alert_ctx_processor],
-                         )
-
-    setup_routes(app)
-    setup_error_pages(app)
-
-    if options.enable_aiohttp_debug_toolbar:
-        aiohttp_debugtoolbar.setup(
-            app, check_host=False, intercept_redirects=False)
-
-    app['log'].info("Start")
-
-    web.run_app(app,
-                host=options.http_server_bind_address,
-                port=options.http_server_bind_port)
+async def on_cleanup(app):
+    logging.getLogger(__name__).debug("on_cleanup")

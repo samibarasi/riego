@@ -1,11 +1,11 @@
 from datetime import datetime
-
 import re
 import json
-from riego.model.valves import Valve
-from riego.model.events import Event
-from riego.model.boxes import Box
-from sqlalchemy.exc import IntegrityError
+
+from sqlite3 import IntegrityError
+
+from logging import getLogger
+_log = getLogger(__name__)
 
 
 bool_to_int = {'true': 1, 'false': 0, True: 1, False: 0,
@@ -15,13 +15,29 @@ bool_to_int = {'true': 1, 'false': 0, True: 1, False: 0,
 int_to_js_bool = {1: "true", 0: "false", -1: "-1"}
 
 
+_instance = None
+
+
+def get_valves():
+    global _instance
+    return _instance
+
+
+def setup_valves(options=None, db=None, mqtt=None, websockets=None):
+    global _instance
+    if _instance is not None:
+        del _instance
+    _instance = Valves(options=options, db=db,
+                       mqtt=mqtt, websockets=websockets)
+    return _instance
+
+
 class Valves():
-    def __init__(self, app):
-        self._db = app['db']
-        self._mqtt = app['mqtt']
-        self._log = app['log']
-        self._options = app['options']
-        self._websockets = app['websockets']
+    def __init__(self, options=None, db=None, mqtt=None, websockets=None):
+        self._db_conn = db.conn
+        self._mqtt = mqtt
+        self._options = options
+        self._websockets = websockets
 
         self.__is_running = None
 
@@ -30,7 +46,7 @@ class Valves():
                              self._mqtt_result_handler)
 
     async def _ws_handler(self, msg: dict) -> None:
-        self._log.debug(f'In Valves._ws_handler: {msg}')
+        _log.debug(f'In Valves._ws_handler: {msg}')
         if msg['action'] == 'update':
             await self.update_by_key(valve_id=msg['id'],
                                      key=msg['key'],
@@ -49,6 +65,7 @@ class Valves():
         :return: [description]
         :rtype: bool
         """
+        _log.debug(f'RESULT: {topic}, payload: {payload}')
         box_topic = re.search('/(.*?)/', topic)
         if box_topic is None:
             return False
@@ -111,71 +128,146 @@ class Valves():
         return True
 
     async def set_on_try(self, valve_id) -> None:
-        session = self._db.Session()
-        valve = session.query(Valve).get(valve_id)
-        valve.is_running = -1
+        try:
+            with self._db_conn:
+                self._db_conn.execute(
+                    "UPDATE valves SET is_running =? WHERE id = ?",
+                    (-1, valve_id))
+        except IntegrityError as e:
+            _log.error(f"Unable to update: {e}")
+            return None
+
+        c = self._db_conn.cursor()
+        c.execute("""SELECT valves.*, boxes.topic AS box_topic
+                    FROM valves, boxes
+                    WHERE valves.box_id = boxes.id AND valves.id=?""",
+                  (valve_id,))
+        valve = c.fetchone()
+        if valve is None:
+            _log.error("Valve not found 001")
+            return None
+        self._db_conn.commit()
 
         await self._send_status_ws(valve_id=valve_id,
                                    key='is_running',
                                    value=-1)
-        await self._send_mqtt(box_topic=valve.box.topic,
-                              channel_nr=valve.channel_nr,
+        await self._send_mqtt(box_topic=valve['box_topic'],
+                              channel_nr=valve['channel_nr'],
                               payload=self._options.mqtt_keyword_ON)
-        session.commit()
-        session.close()
         return None
 
     async def set_off_try(self, valve_id) -> None:
-        session = self._db.Session()
-        valve = session.query(Valve).get(valve_id)
-        valve.is_running = -1
-        session.commit()
-        session.close()
+        try:
+            with self._db_conn:
+                self._db_conn.execute(
+                    "UPDATE valves SET is_running =? WHERE id = ?",
+                    (-1, valve_id))
+        except IntegrityError as e:
+            _log.error(f"Unable to update: {e}")
+            return None
+
+        c = self._db_conn.cursor()
+        c.execute("""SELECT valves.*, boxes.topic AS box_topic
+                    FROM valves, boxes
+                    WHERE valves.box_id = boxes.id AND valves.id=?""",
+                  (valve_id,))
+        valve = c.fetchone()
+        if valve is None:
+            _log.error("Valve not found 001a")
+            return None
+        self._db_conn.commit()
+
         await self._send_status_ws(valve_id=valve_id,
                                    key='is_running',
                                    value=-1)
-        await self._send_mqtt(box_topic=valve.box.topic,
-                              channel_nr=valve.channel_nr,
+        await self._send_mqtt(box_topic=valve['box_topic'],
+                              channel_nr=valve['channel_nr'],
                               payload=self._options.mqtt_keyword_OFF)
         return None
 
     async def _set_on_confirm(self, box_topic=None, channel_nr=None) -> None:
-        session = self._db.Session()
-        valve = session.query(Valve).filter(Box.topic == box_topic,
-                                            Valve.channel_nr == channel_nr).first()  # noqa: E501
+        c = self._db_conn.cursor()
+        c.execute("""SELECT valves.*, boxes.topic AS box_topic
+                    FROM valves, boxes
+                    WHERE valves.box_id = boxes.id
+                    AND boxes.topic =?
+                    AND valves.channel_nr=?""", (box_topic, channel_nr))
+        valve = c.fetchone()
         if valve is None:
-            session.close()
-            return
-        valve.is_running = 1
-        self._log.info(f'Valve switched to ON: {valve.name}')
-        event = Event()
-        valve.events.append(event)
-        session.commit()
-        session.close()
-        await self._send_status_ws(valve_id=valve.id,
+            _log.error("Valve not found 002")
+            return None
+        self._db_conn.commit()
+        try:
+            with self._db_conn:
+                self._db_conn.execute(
+                    "UPDATE valves SET is_running =? WHERE id = ?",
+                    (1, valve['id']))
+        except IntegrityError as e:
+            _log.error(f"Unable to update: {e}")
+            return None
+        try:
+            with self._db_conn:
+                self._db_conn.execute(
+                    "INSERT INTO events (valve_id) VALUES (?)",
+                    (valve['id'],))
+        except IntegrityError as e:
+            _log.error(f'Unable to insert: {e}')
+
+        await self._send_status_ws(valve_id=valve['id'],
                                    key='is_running',
-                                   value=valve.is_running)
+                                   value=1)
+        _log.info('Valve switched to ON: {}'.format(valve['name']))
         return None
 
     async def _set_off_confirm(self, box_topic=None, channel_nr=None) -> None:
-        session = self._db.Session()
-        valve = session.query(Valve).filter(Box.topic == box_topic,
-                                            Valve.channel_nr == channel_nr).first()  # noqa: E501
+        c = self._db_conn.cursor()
+        c.execute("""SELECT valves.*, boxes.topic AS box_topic
+                    FROM valves, boxes
+                    WHERE valves.box_id = boxes.id
+                    AND boxes.topic = ?
+                    AND valves.channel_nr = ?""", (box_topic, channel_nr))
+        valve = c.fetchone()
         if valve is None:
-            session.close()
-            return
-        valve.is_running = 0
-        event = session.query(Event).filter(
-            Event.valve_id == valve.id, Event.duration == 0).order_by(Event.created_at.desc()).first()  # noqa: E501
-        if event is not None:
-            duration = datetime.now() - event.created_at
-            duration = duration.total_seconds() / 60.0
-            event.duration = round(duration)
-        session.commit()
-        session.close()
-        self._log.info(f'Valve switched to OFF: {valve.name}')
-        await self._send_status_ws(valve_id=valve.id, key='is_running',
-                                   value=valve.is_running)
+            _log.error("Valve not found 003")
+            return None
+        self._db_conn.commit()
+        try:
+            with self._db_conn:
+                self._db_conn.execute(
+                    "UPDATE valves SET is_running = ? WHERE id = ?",
+                    (0, valve['id']))
+        except IntegrityError as e:
+            _log.error(f"Unable to update: {e}")
+            return None
+
+        c = self._db_conn.cursor()
+        c.execute("""SELECT * FROM events
+                    WHERE events.duration = 0
+                    AND valve_id = ?
+                    ORDER BY events.created_at DESC""", (valve['id'],))
+        event = c.fetchone()
+        if event is None:
+            _log.error("Event not found")
+            return None
+        self._db_conn.commit()
+        # TODO sqlite should convert to datetime object
+        duration = datetime.now() - event['created_at']
+        duration = duration.total_seconds() / 60.0
+        duration = round(duration)
+        if duration == 0:
+            duration = 1
+        try:
+            with self._db_conn:
+                self._db_conn.execute(
+                    "UPDATE events SET duration = ? WHERE id = ?",
+                    (duration, event['id']))
+        except IntegrityError as e:
+            _log.error(f"Unable to update: {e}")
+            return None
+
+        await self._send_status_ws(valve_id=valve['id'], key='is_running',
+                                   value=0)
+        _log.info('Valve switched to OFF: {}'.format(valve['name']))
         return None
 
     async def update_by_key(self, valve_id=None, key=None, value=None) -> bool:
@@ -186,18 +278,15 @@ class Valves():
             else:
                 await self.set_off_try(valve_id)
             return True
-
-        session = self._db.Session()
-        valve = session.query(Valve).get(valve_id)
-        setattr(valve, key, value)
+        sql = f"UPDATE valves SET {key} = ? WHERE id = ?"
         try:
-            session.commit()
+            with self._db_conn:
+                self._db_conn.execute(sql, (value, valve_id))
         except IntegrityError as e:
-            self._log.error(f'valves.py: {e}')
+            _log.error(f'Unable to update: {e}')
             ret = False
         print(f'valve_id={valve_id}, key={key}, value={value}')
         await self._send_status_ws(valve_id=valve_id, key=key, value=value)
-        session.close()
         return ret
 
 

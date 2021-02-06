@@ -1,11 +1,32 @@
 from aiohttp import web
 import json
+from logging import getLogger
+_log = getLogger(__name__)
+
+
+_instance = None
+
+
+def get_websockets():
+    global _instance
+    return _instance
+
+
+def setup_websockets(app=None, options=None):
+    global _instance
+    if _instance is not None:
+        del _instance
+    _instance = Websockets(app=app, options=options)
+    return _instance
 
 
 class Websockets():
-    def __init__(self, app):
-        self._log = app['log']
-        self._options = app['options']
+    def __init__(self, app=None, options=None):
+        global _instance
+        if _instance is None:
+            _instance = self
+
+        self._options = options
 
         self._ws_list = []
         self._subscriptions = {}
@@ -41,38 +62,38 @@ class Websockets():
 
         try:
             async for msg in ws:
-                self._log.debug(msg)
+                _log.debug(msg)
                 if msg.type == web.WSMsgType.TEXT:
                     msg = json.loads(msg.data)
                     await self._dispatch_message(msg)
                 else:
                     break
         except Exception as e:
-            self._log.error(f'websocket.py, exeption {e}')
+            _log.error(f'websocket.py, exeption {e}')
         finally:
-            self._log.debug(f'Finally ws remove: {ws}')
+            _log.debug(f'Finally ws remove: {ws}')
             self._ws_list.remove(ws)
         return ws
 
     async def _dispatch_message(self, msg: dict) -> bool:
         model = msg.get('model', None)
         if model is None:
-            self._log.error(f'Message not for a data model: {msg}')
+            _log.error(f'Message not for a data model: {msg}')
             return False
         callback_func = self._subscriptions.get(model, None)
         if callback_func is None:
-            self._log.error(f'Message for an unknown data model: {msg}')
+            _log.error(f'Message for an unknown data model: {msg}')
             return False
         try:
             await callback_func(msg)
         except Exception as e:
-            self._log.error(
+            _log.error(
                 f'websocket.py, exeption {e} in callable {callback_func}')
             return False
         return True
 
     async def shutdown(self, app) -> None:
         for ws in self._ws_list:
-            self._log.debug(f'calling ws.close for: {ws}')
+            _log.debug(f'calling ws.close for: {ws}')
             await ws.close()
         return None

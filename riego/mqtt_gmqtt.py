@@ -1,15 +1,35 @@
 import asyncio
-import logging
 import re
 
 from gmqtt import Client as MQTTClient
 from gmqtt.mqtt.constants import MQTTv311
 
+from logging import getLogger
+_log = getLogger(__name__)
+
+_instance = None
+
+
+def get_mqtt():
+    global _instance
+    return _instance
+
+
+def setup_mqtt(app=None, options=None):
+    global _instance
+    if _instance is not None:
+        del _instance
+    _instance = Mqtt(app=app, options=options)
+    return _instance
+
 
 class Mqtt:
-    def __init__(self, app):
-        self._options = app['options']
-        self._log = app['log']
+    def __init__(self, app=None, options=None):
+        global _instance
+        if _instance is None:
+            _instance = self
+
+        self._options = options
         self.client = MQTTClient(self._options.mqtt_client_id)
         self.client.on_connect = self._on_connect
         self.client.on_message = self._on_message
@@ -18,16 +38,16 @@ class Mqtt:
         self._subscriptions = {}
 
         self._task = None
-        app.cleanup_ctx.append(self.mqtt_engine)
+        app.cleanup_ctx.append(self._mqtt_engine)
 
-    async def mqtt_engine(self, app):
+    async def _mqtt_engine(self, app):
         self._task = asyncio.create_task(self._startup(app))
         yield
         # TODO _shutdown should not be an awaitable
         await self._shutdown(app, self._task)
 
     async def _startup(self, app) -> None:
-        self._log.debug('MQTT Engine startup called')
+        _log.debug('MQTT Engine startup called')
         await self.client.connect(self._options.mqtt_host,
                                   port=self._options.mqtt_port,
                                   keepalive=10,
@@ -35,35 +55,35 @@ class Mqtt:
         return None
 
     async def _shutdown(self, app, task) -> None:
-        self._log.debug('MQTT Engine shutdown called')
+        _log.debug('MQTT Engine shutdown called')
         # TODO hier kein awaitable sinnvoll
         await self.client.disconnect()
         return None
 
     def _on_connect(self, client, flags, rc, properties):
-        self._log.debug('MQTT Connected')
+        _log.debug('MQTT Connected')
 
         for key in self._subscriptions:
             self.client.subscribe(key, qos=0)
 
     async def _on_message(self, client, topic, payload, qos, properties):
         payload = payload.decode()
-#        self._log.debug(f'MQTT RECV MSG: {payload}, TOPIC: {topic}')
+#        _log.debug(f'MQTT RECV MSG: {payload}, TOPIC: {topic}')
         for key in self._subscriptions:
             if self.match_topic(topic, key):
                 func = self._subscriptions[key]
                 try:
                     await func(topic, payload)
                 except Exception as e:
-                    self._log.error(
+                    _log.error(
                         f'{__name__}, exeption {e} in callable {func}')
         return 0
 
     def _on_disconnect(self, client, packet, exc=None):
-        self._log.debug('MQTT Disconnected')
+        _log.debug('MQTT Disconnected')
 
     def _on_subscribe(self, client, mid, qos, properties):
-        self._log.debug('MQTT SUBSCRIBED')
+        _log.debug('MQTT SUBSCRIBED')
 
     def subscribe(self, topic: str, callback: callable) -> None:
         self._subscriptions[topic] = callback
@@ -97,9 +117,6 @@ async def main():
     app = {}
     options = Options()
     app['options'] = options
-    logger = logging
-    logging.basicConfig(level=logging.DEBUG)
-    app['log'] = logger
 
     mqttc = Mqtt(app)
     await mqttc.start_async()

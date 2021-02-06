@@ -36,3 +36,4 @@ class Box(Base):
 
     def __repr__(self):
         return "<Box(topic='%s', name='%s')>" % (self.topic, self.name)
+
