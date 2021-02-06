@@ -52,6 +52,14 @@ steps = [
      """DROP TABLE parameters"""
     ),
     step(
+    """INSERT INTO parameters (key,value) VALUES ('max_duration', '240')""",
+    """DELETE FROM parameters WHERE key = 'max_duration'"""
+    ),
+    step(
+    """INSERT INTO parameters (key,value) VALUES ('start_time_1', '19:00')""",
+    """DELETE FROM parameters WHERE key = 'start_time_1' """
+    ),
+    step(
     """CREATE TABLE "valves" (
 	"id"	INTEGER PRIMARY KEY,
 	"name"	VARCHAR,
@@ -59,7 +67,7 @@ steps = [
 	"channel_nr"	INTEGER NOT NULL,
 	"duration"	INTEGER DEFAULT 0,
 	"interval"	INTEGER DEFAULT 4,
-	"last_shedule"	DATETIME DEFAULT '1970-01-01 00:00:00.000000',
+	"last_shedule"	timestamp DEFAULT '1970-01-01 00:00:00',
 	"is_running"	INTEGER DEFAULT 0,
 	"is_enabled"	INTEGER DEFAULT 0,
 	"is_hidden"	INTEGER DEFAULT 1,

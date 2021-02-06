@@ -17,6 +17,7 @@ from riego.db import setup_db
 from riego.mqtt_gmqtt import setup_mqtt
 from riego.boxes import setup_boxes
 from riego.valves import setup_valves
+from riego.timer import setup_timer
 # import riego.valves
 # import riego.parameters
 # import riego.timer
@@ -96,6 +97,8 @@ def main():
     boxes = setup_boxes(options=options, db=db, mqtt=mqtt)
     valves = setup_valves(options=options, db=db,
                           mqtt=mqtt, websockets=websockets)
+    timer = setup_timer(app=app, options=options, db=db,
+                        mqtt=mqtt, valves=valves)
 #    app['boxes'] = riego.boxes.Boxes(app)
 #    app['valves'] = riego.valves.Valves(app)
 #    app['parameters'] = riego.parameters.Parameters(app)

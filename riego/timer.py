@@ -1,25 +1,44 @@
 from datetime import datetime, timedelta
 import asyncio
+from sqlite3 import IntegrityError
+import logging
 
-from riego.model.parameters import Parameter
-from riego.model.valves import Valve
-from riego.model.events import Event
-from riego.model.boxes import Box
+
+_log = logging.getLogger(__name__)
+
+_instance = None
+
+
+def get_timer():
+    global _instance
+    return _instance
+
+
+def setup_timer(app=None, options=None, db=None, mqtt=None, valves=None):
+    global _instance
+    if _instance is not None:
+        del _instance
+    _instance = Timer(app=app, options=options, db=db,
+                      mqtt=mqtt, valves=valves)
+    return _instance
 
 
 class Timer():
-    def __init__(self, app):
-        self._db = app['db']
-        self._options = app['options']
-        self._log = app['log']
-        self._mqtt = app['mqtt']
-        self._valves = app['valves']
+    def __init__(self, app=None, options=None,
+                 db=None, mqtt=None, valves=None):
+        self._options = options
+        self._db_conn = db.conn
+        self._mqtt = mqtt
+        self._valves = valves
 
         self._running_period_end = None
         self._running_period_start = None
 
         self._stop = False
         self._task = None
+
+        self._current_valve_running = None
+
         app.cleanup_ctx.append(self.timer_engine)
 
     async def timer_engine(self, app):
@@ -28,111 +47,106 @@ class Timer():
         self._shutdown(self._task)
 
     async def _timer_loop(self) -> None:
-        self._log.debug('Timer Engine started')
-        await asyncio.sleep(3)
-        self._current_valve_running = None
+        _log.debug('Timer Engine started')
         while not self._stop:
-            valve_ids = []
+            await asyncio.sleep(3)
             await self._check_updates()
-            session = self._db.Session()
-            items = session.query(Valve).order_by(Valve.prio).all()
-            for item in items:
-                valve_ids.append(item.id)
-            session.close()
-            for valve_id in valve_ids:
-                await self._dispatch_valve(valve_id)
-                await asyncio.sleep(1)
-#         if valve is not None:
-#            await self._valves.set_off_try(valve)
-        
+            c = self._db_conn.cursor()
+            c.execute("""SELECT * FROM valves ORDER BY valves.prio""")
+            valves = c.fetchall()
+            self._db_conn.commit()
+            for valve in valves:
+                await self._dispatch_valve(valve)
+            print (f'cur_valve_run: {self._current_valve_running}')
+        if valve is not None:
+            await self._valves.set_off_try(valve['id'])
         return None
 
     async def _check_updates(self):
         return None
 
-    async def _dispatch_valve(self, valve_id):
-        session = self._db.Session()
-        valve = session.query(Valve).get(valve_id)
-        session.commit()
-        print(valve)
+    async def _dispatch_valve(self, valve):
+        print(valve['name'])
         if not self._mqtt.client.is_connected:
-            session.close()
             return None
         if valve is None:
-            session.close()
             return None
-        if valve.is_running == 1:
-            self._current_valve_running = valve.id
+        if valve['is_running'] == 1:
+            self._current_valve_running = valve['id']
             if await self._check_to_switch_off(valve):
                 self._current_valve_running = 0
-                session.close()
                 return 0
             else:
-                session.close()
+                self._current_valve_running = valve['id']
                 return 1
-        if valve.is_hidden:
-            session.close()
+        if valve['is_hidden']:
             return None
-        if not valve.is_enabled:
-            session.close()
+        if not valve['is_enabled']:
             return None
-        if valve.is_running == -1:
-            session.close()
+        if valve['is_running'] == -1:
             return None
-        if valve.is_running == 0:
+        if valve['is_running'] == 0:
             if (not self._current_valve_running and
                     await self._check_to_switch_on(valve)):
-                self._current_valve_running = valve.id
-                session.close()
+                self._current_valve_running = valve['id']
                 return 1
-        session.close()
         return None
-    
+
     async def _check_to_switch_off(self, valve) -> bool:
         ret = False
-        print(f"check off id: {valve.id}")
+        print("check off id: {}".format(valve['id']))
         if self._options.enable_timer_dev_mode:
-            td = timedelta(minutes=0, seconds=valve.duration)
+            td = timedelta(minutes=0, seconds=valve['duration'])
         else:
-            td = timedelta(minutes=valve.duration)
+            td = timedelta(minutes=valve['duration'])
 
-        if datetime.now() - valve.last_shedule > td:
+        if datetime.now() - valve['last_shedule'] > td:
             # Laufzeit erreicht
-            await self._valves.set_off_try(valve.id)
-            self._log.debug('valveOff: {}'.format(valve.name))
+            await self._valves.set_off_try(valve['id'])
+            _log.debug('valveOff: {}'.format(valve['name']))
             ret = True
         return ret
 
     async def _check_to_switch_on(self, valve) -> bool:
         ret = False
-        print(f"check on id: {valve.id}")
+        print("check on id: {}".format(valve['id']))
         if self._options.enable_timer_dev_mode:
-            td = timedelta(days=0, seconds=valve.interval)
+            td = timedelta(days=0, seconds=valve['interval'])
         else:
-            td = timedelta(days=valve.interval)
+            td = timedelta(days=valve['interval'])
 
-        if (datetime.now() - valve.last_shedule > td and
+        if (datetime.now() - valve['last_shedule'] > td and
                 await self._is_running_period()):
             # Intervall erreicht
-            await self._valves.set_on_try(valve.id)
-            valve.last_shedule = datetime.now()
-            self._log.debug('valveOn: {}'.format(valve.name))
-            ret = True
+            await self._valves.set_on_try(valve['id'])
+            try:
+                with self._db_conn:
+                    self._db_conn.execute(
+                        """UPDATE valves SET last_shedule = ? WHERE id = ? """,
+                        (datetime.now(), valve['id']))
+            except IntegrityError as e:
+                pass
+#                _log.error(f'update for last_shedule failed: {e}')
+                return False
+#            _log.debug('valveOn: {}'.format(valve['name']))
         return ret
 
     def _shutdown(self, task) -> None:
-        self._log.debug('Timer Engine shutdown called')
+        _log.debug('Timer Engine shutdown called')
         self._stop = True
 
     async def _is_running_period(self) -> bool:
         return True
-        session = self._db.Session()
-        self._maxDuration = session.query(Parameter).filter(
-            Parameter.key == 'maxDuration').first().value
-        self._startTime = session.query(Parameter).filter(
-            Parameter.key == 'startTime').first().value
-        session.close()
-        self._start_hour, self._start_minute = self._startTime.split(':')
+        c = self._db_conn.cursor()
+        c.execute("""SELECT * FROM parameters WHERE key = ?""",
+                  ('max_duration'))
+        self._max_duration = int(c.fetchone()['value'])
+        c.execute("""SELECT * FROM parameters WHERE key = ?""",
+                  ('start_time_1'))
+        self._start_time_1 = c.fetchone()['value']
+        self._db_conn.commit()
+
+        self._start_hour, self._start_minute = self._start_time_1(':')
         self._start_hour = int(self._start_hour)
         self._start_minute = int(self._start_minute)
 
@@ -146,7 +160,7 @@ class Timer():
 
         if self._running_period_end is None:
             self._running_period_end = self._running_period_start + \
-                timedelta(minutes=self._maxDuration)
+                timedelta(minutes=self._max_duration)
 
         if datetime.now() > self._running_period_end:
             self._running_period_start = None

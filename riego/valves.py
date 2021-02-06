@@ -143,11 +143,10 @@ class Valves():
                     WHERE valves.box_id = boxes.id AND valves.id=?""",
                   (valve_id,))
         valve = c.fetchone()
+        self._db_conn.commit()
         if valve is None:
             _log.error("Valve not found 001")
             return None
-        self._db_conn.commit()
-
         await self._send_status_ws(valve_id=valve_id,
                                    key='is_running',
                                    value=-1)
@@ -176,7 +175,6 @@ class Valves():
             _log.error("Valve not found 001a")
             return None
         self._db_conn.commit()
-
         await self._send_status_ws(valve_id=valve_id,
                                    key='is_running',
                                    value=-1)
@@ -227,6 +225,7 @@ class Valves():
                     AND boxes.topic = ?
                     AND valves.channel_nr = ?""", (box_topic, channel_nr))
         valve = c.fetchone()
+        self._db_conn.commit()
         if valve is None:
             _log.error("Valve not found 003")
             return None
