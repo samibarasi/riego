@@ -136,23 +136,20 @@ class Timer():
         self._stop = True
 
     async def _is_running_period(self) -> bool:
-        return True
         c = self._db_conn.cursor()
         c.execute("""SELECT * FROM parameters WHERE key = ?""",
-                  ('max_duration'))
-        self._max_duration = int(c.fetchone()['value'])
+                  ('max_duration',))
+        max_duration = c.fetchone()['value']
         c.execute("""SELECT * FROM parameters WHERE key = ?""",
-                  ('start_time_1'))
-        self._start_time_1 = c.fetchone()['value']
+                  ('start_time_1',))
+        start_time_1 = c.fetchone()['value']
         self._db_conn.commit()
 
-        self._start_hour, self._start_minute = self._start_time_1(':')
-        self._start_hour = int(self._start_hour)
-        self._start_minute = int(self._start_minute)
+        start_hour, start_minute = start_time_1.split(':')
 
         if self._running_period_start is None:
             self._running_period_start = datetime.now().replace(
-                hour=self._start_hour, minute=self._start_minute, second=0)
+                hour=int(start_hour), minute=int(start_minute), second=0)
 
         if datetime.now() < self._running_period_start:
             self._running_period_end = None
@@ -160,7 +157,7 @@ class Timer():
 
         if self._running_period_end is None:
             self._running_period_end = self._running_period_start + \
-                timedelta(minutes=self._max_duration)
+                timedelta(minutes=int(max_duration))
 
         if datetime.now() > self._running_period_end:
             self._running_period_start = None
