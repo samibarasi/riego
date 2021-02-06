@@ -47,16 +47,16 @@ async def system_do_update(request):
 @aiohttp_jinja2.template('system/index.html')
 async def system_restart(request):
     # TODO shedule exit for a few seconds and return a redirect
-    exit(0)
-    return {}
+    asyncio.get_event_loop().call_later(1, exit, 0)
+    raise web.HTTPSeeOther(location="/system")
 
 
-@router.get("/system/event_log")
+@router.get("/system/log_file")
 @aiohttp_jinja2.template('system/index.html')
-async def system_event_log(request):
-    with open(request.app['options'].event_log, "rt") as fp:
-        # return web.Response(body=fp.read(), content_type="text/plain")
-        return {'text': fp.read()}
+async def system_log_file(request):
+    with open(request.app['options'].log_file, "rt") as fp:
+        return web.Response(body=fp.read(), content_type="text/plain")
+        # return {'text': fp.read()}
 
 
 @router.get("/system/system_exc")
@@ -111,3 +111,4 @@ async def _do_update():
         "-q", "-q", "-q")
     await proc.wait()
     return proc.returncode
+

@@ -68,9 +68,9 @@ class Boxes():
             with self._db_conn:
                 self._db_conn.execute(
                     ''' INSERT INTO boxes
-                    (topic, first_seen, online_since)
-                    VALUES (?, ?, ?) ''',
-                    (box_topic, first_seen, online_since))
+                    (name, topic, first_seen, online_since)
+                    VALUES (?, ?, ?, ?) ''',
+                    (box_topic, box_topic, first_seen, online_since))
         except IntegrityError:
             with self._db_conn:
                 self._db_conn.execute(
@@ -191,9 +191,9 @@ class Boxes():
             with self._db_conn:
                 cursor = self._db_conn.execute(
                     ''' INSERT INTO boxes
-                    (topic, first_seen, online_since)
-                    VALUES (?, ?, ?) ''',
-                    (box_topic, datetime.now(), datetime.now()))
+                    (name, topic, first_seen, online_since)
+                    VALUES (?, ?, ?, ?) ''',
+                    (box_topic, box_topic, datetime.now(), datetime.now()))
             box_id = cursor.lastrowid
         else:
             box_id = item['id']
