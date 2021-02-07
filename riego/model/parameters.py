@@ -26,8 +26,8 @@ class Var:
             _instance = self
         self._db_conn = db.conn
 
-        self._start_time_1 = "19:00"
-        self._max_duration = "240"
+        self._start_time_1 = options.parameters_start_time_1
+        self._max_duration = options.parameters_max_duartion
 
         self._load_all()
 

@@ -201,6 +201,10 @@ def _get_options():
     p.add('--mqtt_keyword_OFF', help='',
           default="OFF")
 
+    p.add('--parameters_start_time_1', default="19:00")
+    p.add('--parameters_max_duartion', default="240")
+
+
     p.add('--enable_aiohttp_debug_toolbar', action='store_true')
     p.add('--enable_asyncio_debug', action='store_true')
     p.add('--enable_timer_dev_mode', action='store_true')

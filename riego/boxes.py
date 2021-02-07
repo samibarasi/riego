@@ -108,8 +108,9 @@ class Boxes():
                             (channel_nr, box_id,
                              f'{box_topic}, Power {channel_nr}')
                         )
-                except IntegrityError as e:
-                    _log.debug(f'unable to Update MQTT STATE:{e}')
+                except IntegrityError:
+                    # _log.debug(f'unable to Update MQTT STATE:{e}')
+                    pass
         return True
 
     async def _mqtt_info1_handler(self, topic: str, payload: str) -> bool:
@@ -145,8 +146,9 @@ class Boxes():
                     WHERE id = ?""",
                     (hw_type, hw_version, sw_type, sw_version,
                      fallback_topic, group_topic, box_id))
-        except IntegrityError as e:
-            _log.debug(f'unable to Update MQTT INFO1:{e}')
+        except IntegrityError:
+            # _log.debug(f'unable to Update MQTT INFO1:{e}')
+            pass
         return True
 
     async def _mqtt_info2_handler(self, topic: str, payload: str) -> bool:
@@ -173,8 +175,9 @@ class Boxes():
                     SET hostname = ?, ip_address = ?
                     WHERE id = ?""",
                     (hostname, ip_address, box_id))
-        except IntegrityError as e:
-            _log.debug(f'Unable to update MQTT INFO2:{e}')
+        except IntegrityError:
+            # _log.debug(f'Unable to update MQTT INFO2:{e}')
+            pass
         return True
 
     async def _get_box_id_by_topic(self, topic=None):
