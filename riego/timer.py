@@ -60,8 +60,15 @@ class Timer():
                         ORDER BY valves.prio""")
             valves = c.fetchall()
             self._db_conn.commit()
+
+            c = self._db_conn.cursor()
+            c.execute("""SELECT MAX(valves.is_running) AS one_valve_is_on
+                        FROM valves""")
+            one_valve_is_on = c.fetchone()['one_valve_is_on']
+            self._db_conn.commit()
+
             for valve in valves:
-                await self._dispatch_valve(valve)
+                await self._dispatch_valve(valve, one_valve_is_on)
         # Close last valve on exit
         if valve is not None:
             await self._valves.set_off_try(valve['id'])
@@ -70,7 +77,7 @@ class Timer():
     async def _check_updates(self):
         return None
 
-    async def _dispatch_valve(self, valve):
+    async def _dispatch_valve(self, valve, one_valve_is_on):
         # _log.debug("dispatch_valve: {}".format(valve['name']))
         if not self._mqtt.client.is_connected:
             return None
@@ -87,7 +94,7 @@ class Timer():
             return None
         if valve['is_running'] == -1:
             return None
-        if valve['is_running'] == 0 and not valve['one_is_on'] == 1:
+        if valve['is_running'] == 0 and not one_valve_is_on == 1:
             await self._check_to_switch_on(valve)
             # TODO Waiting Timeout period
             # await asyncio.sleep(1)
@@ -145,7 +152,8 @@ class Timer():
 
         if self._running_period_start is None:
             self._running_period_start = datetime.now().replace(
-                hour=int(start_hour), minute=int(start_minute), second=0)
+                hour=int(start_hour), minute=int(start_minute),
+                second=0, microsecond=0)
 
         if datetime.now() < self._running_period_start:
             self._running_period_end = None
