@@ -52,14 +52,6 @@ steps = [
      """DROP TABLE parameters"""
     ),
     step(
-    """INSERT INTO parameters (key,value) VALUES ('max_duration', '240')""",
-    """DELETE FROM parameters WHERE key = 'max_duration'"""
-    ),
-    step(
-    """INSERT INTO parameters (key,value) VALUES ('start_time_1', '19:00')""",
-    """DELETE FROM parameters WHERE key = 'start_time_1' """
-    ),
-    step(
     """CREATE TABLE "valves" (
 	"id"	INTEGER PRIMARY KEY,
 	"name"	VARCHAR,

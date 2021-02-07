@@ -43,15 +43,13 @@ body {
 
 <body>
     {% set navigation_bar = [
-    ('/', 'dashboard', 'Dashboard'),
     ('/boxes', 'boxes', 'Ventilboxen'),
     ('/valves', 'valves', 'Bewässerungskreise'),
     ('/events', 'events', 'Ereignisse'),
     ('/system', 'system', 'System'),
-    ('/parameters', 'parameters', 'Einstellungen'),
     ('/about', 'about', 'About')
     ] -%}
-    {% set active_menu = active_menu|default('dashboard') -%}
+    {% set active_menu = active_menu|default('') -%}
 
     <div class="container">
 

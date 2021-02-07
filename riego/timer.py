@@ -14,21 +14,26 @@ def get_timer():
     return _instance
 
 
-def setup_timer(app=None, options=None, db=None, mqtt=None, valves=None):
+def setup_timer(app=None, options=None,
+                db=None, mqtt=None,
+                parameters=None, valves=None):
     global _instance
     if _instance is not None:
         del _instance
-    _instance = Timer(app=app, options=options, db=db,
-                      mqtt=mqtt, valves=valves)
+    _instance = Timer(app=app, options=options,
+                      db=db, mqtt=mqtt,
+                      parameters=parameters, valves=valves)
     return _instance
 
 
 class Timer():
     def __init__(self, app=None, options=None,
-                 db=None, mqtt=None, valves=None):
+                 db=None, mqtt=None,
+                 parameters=None, valves=None):
         self._options = options
         self._db_conn = db.conn
         self._mqtt = mqtt
+        self._parameters = parameters
         self._valves = valves
 
         self._running_period_end = None
@@ -36,8 +41,6 @@ class Timer():
 
         self._stop = False
         self._task = None
-
-        self._current_valve_running = None
 
         app.cleanup_ctx.append(self.timer_engine)
 
@@ -52,12 +55,14 @@ class Timer():
             await asyncio.sleep(3)
             await self._check_updates()
             c = self._db_conn.cursor()
-            c.execute("""SELECT * FROM valves ORDER BY valves.prio""")
+            c.execute("""SELECT MAX(valves.is_running) AS one_is_on, valves.*
+                        FROM valves
+                        ORDER BY valves.prio""")
             valves = c.fetchall()
             self._db_conn.commit()
             for valve in valves:
                 await self._dispatch_valve(valve)
-            print(f'cur_valve_run: {self._current_valve_running}')
+        # Close last valve on exit
         if valve is not None:
             await self._valves.set_off_try(valve['id'])
         return None
@@ -66,35 +71,29 @@ class Timer():
         return None
 
     async def _dispatch_valve(self, valve):
-        print(valve['name'])
+        _log.debug("dispatch_valve: {}".format(valve['name']))
         if not self._mqtt.client.is_connected:
             return None
         if valve is None:
             return None
         if valve['is_running'] == 1:
-            self._current_valve_running = valve['id']
-            if await self._check_to_switch_off(valve):
-                self._current_valve_running = 0
-                return 0
-            else:
-                self._current_valve_running = valve['id']
-                return 1
+            await self._check_to_switch_off(valve)
+            return None
         if valve['is_hidden']:
             return None
         if not valve['is_enabled']:
             return None
         if valve['is_running'] == -1:
             return None
-        if valve['is_running'] == 0:
-            if (not self._current_valve_running and
-                    await self._check_to_switch_on(valve)):
-                self._current_valve_running = valve['id']
-                return 1
+        if valve['is_running'] == 0 and not valve['one_is_on'] == 1:
+            await self._check_to_switch_on(valve)
+            await asyncio.sleep(1)
+            return None
         return None
 
     async def _check_to_switch_off(self, valve) -> bool:
         ret = False
-        print("check off id: {}".format(valve['id']))
+        print("check_to_switch_off for id: {}".format(valve['id']))
         if self._options.enable_timer_dev_mode:
             td = timedelta(minutes=0, seconds=valve['duration'])
         else:
@@ -109,7 +108,7 @@ class Timer():
 
     async def _check_to_switch_on(self, valve) -> bool:
         ret = False
-        print("check on id: {}".format(valve['id']))
+        _log.debug("check_to_switch_on for id: {}".format(valve['id']))
         if self._options.enable_timer_dev_mode:
             td = timedelta(days=0, seconds=valve['interval'])
         else:
@@ -136,15 +135,8 @@ class Timer():
         self._stop = True
 
     async def _is_running_period(self) -> bool:
-        c = self._db_conn.cursor()
-        c.execute("""SELECT * FROM parameters WHERE key = ?""",
-                  ('max_duration',))
-        max_duration = c.fetchone()['value']
-        c.execute("""SELECT * FROM parameters WHERE key = ?""",
-                  ('start_time_1',))
-        start_time_1 = c.fetchone()['value']
-        self._db_conn.commit()
-
+        max_duration = self._parameters.max_duration
+        start_time_1 = self._parameters.start_time_1
         start_hour, start_minute = start_time_1.split(':')
 
         if self._running_period_start is None:

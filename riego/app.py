@@ -14,6 +14,7 @@ from riego.mqtt import setup_mqtt
 from riego.boxes import setup_boxes
 from riego.valves import setup_valves
 from riego.timer import setup_timer
+from riego.model.parameters import setup_parameters
 
 
 from riego.web.websockets import setup_websockets
@@ -83,12 +84,13 @@ def main():
 
     websockets = setup_websockets(app=app, options=options)
     db = setup_db(options=options)
+    parameters = setup_parameters(app=app, options=options, db=db)
     mqtt = setup_mqtt(app=app, options=options)
     setup_boxes(options=options, db=db, mqtt=mqtt)
     valves = setup_valves(options=options, db=db,
                           mqtt=mqtt, websockets=websockets)
     setup_timer(app=app, options=options, db=db,
-                mqtt=mqtt, valves=valves)
+                mqtt=mqtt, valves=valves, parameters=parameters)
 
     fernet_key = fernet.Fernet.generate_key()
     secret_key = base64.urlsafe_b64decode(fernet_key)
