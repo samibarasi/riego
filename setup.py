@@ -26,6 +26,7 @@ setuptools.setup(
         'cchardet',
         'aiohttp_debugtoolbar',
         'aiohttp_session[secure]',
+        'aiohttp_remotes',
     ],
     include_package_data=True,
     scripts=['bin/setup_riego_service.sh'],

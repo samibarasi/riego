@@ -26,6 +26,8 @@ from aiohttp import web
 import jinja2
 import aiohttp_jinja2
 import aiohttp_debugtoolbar
+from aiohttp_remotes import ForwardedRelaxed
+from aiohttp_remotes import setup as aiohttp_remotes_setup
 
 import base64
 from cryptography import fernet
@@ -105,6 +107,7 @@ def main():
 
     setup_routes(app)
     setup_error_pages(app)
+    aiohttp_remotes_setup(app, ForwardedRelaxed)
 
     if options.enable_aiohttp_debug_toolbar:
         aiohttp_debugtoolbar.setup(

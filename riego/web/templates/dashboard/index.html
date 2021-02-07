@@ -34,7 +34,7 @@
             <input class="form-check-input" type="checkbox" value="" id="valves_{{valve['id']}}_is_enabled" autocomplete="off"
                 {% if valve['is_enabled'] == 1 %} checked {% endif %}
                 onchange="ws.send(JSON.stringify({action: 'update', scope: 'valves', id: '{{valve['id'] }}', key: 'is_enabled', value: this.checked } ))">
-            <label class="form-check-label" for="valves_{{valve['id']}}_is_enabled">Aktiviert</label>
+            <label class="form-check-label" for="valves_{{valve['id']}}_is_enabled">Einschalten durch Timer?</label>
         </div>
     </div>
     
