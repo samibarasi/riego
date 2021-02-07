@@ -76,6 +76,8 @@ class Timer():
             return None
         if valve is None:
             return None
+        if valve['duration'] == 0:
+            return None
         if valve['is_running'] == 1:
             await self._check_to_switch_off(valve)
             return None
@@ -88,7 +90,7 @@ class Timer():
         if valve['is_running'] == 0 and not valve['one_is_on'] == 1:
             await self._check_to_switch_on(valve)
             # TODO Waiting Timeout period
-            await asyncio.sleep(1)
+            # await asyncio.sleep(1)
             return None
         return None
 
@@ -100,7 +102,7 @@ class Timer():
         else:
             td = timedelta(minutes=valve['duration'])
 
-        if datetime.now() - valve['last_shedule'] > td:
+        if datetime.now() - valve['last_run'] > td:
             # Laufzeit erreicht
             await self._valves.set_off_try(valve['id'])
             _log.debug('valveOff: {}'.format(valve['name']))
@@ -115,15 +117,16 @@ class Timer():
         else:
             td = timedelta(days=valve['interval'])
 
+        last_shedule = await self._is_running_period()
         if (datetime.now() - valve['last_shedule'] > td and
-                await self._is_running_period()):
+                last_shedule is not None):
             # Intervall erreicht
             await self._valves.set_on_try(valve['id'])
             try:
                 with self._db_conn:
                     self._db_conn.execute(
                         """UPDATE valves SET last_shedule = ? WHERE id = ? """,
-                        (datetime.now(), valve['id']))
+                        (last_shedule, valve['id']))
             except IntegrityError as e:
                 pass
                 _log.error(f'update for last_shedule failed: {e}')
@@ -135,7 +138,7 @@ class Timer():
         _log.debug('Timer Engine shutdown called')
         self._stop = True
 
-    async def _is_running_period(self) -> bool:
+    async def _is_running_period(self) -> datetime:
         max_duration = self._parameters.max_duration
         start_time_1 = self._parameters.start_time_1
         start_hour, start_minute = start_time_1.split(':')
@@ -146,7 +149,7 @@ class Timer():
 
         if datetime.now() < self._running_period_start:
             self._running_period_end = None
-            return False
+            return None
 
         if self._running_period_end is None:
             self._running_period_end = self._running_period_start + \
@@ -154,5 +157,5 @@ class Timer():
 
         if datetime.now() > self._running_period_end:
             self._running_period_start = None
-            return False
-        return True
+            return None
+        return self._running_period_start

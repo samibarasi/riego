@@ -198,8 +198,9 @@ class Valves():
         try:
             with self._db_conn:
                 self._db_conn.execute(
-                    "UPDATE valves SET is_running =? WHERE id = ?",
-                    (1, valve['id']))
+                    """UPDATE valves SET is_running = ?, last_run = ?
+                    WHERE id = ?""",
+                    (1, datetime.now(), valve['id']))
         except IntegrityError as e:
             _log.error(f"Unable to update: {e}")
             return None

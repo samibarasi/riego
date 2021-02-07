@@ -60,6 +60,7 @@ steps = [
 	"duration"	INTEGER DEFAULT 0,
 	"interval"	INTEGER DEFAULT 4,
 	"last_shedule"	timestamp DEFAULT '1970-01-01 00:00:00',
+    "last_run"	timestamp DEFAULT '1970-01-01 00:00:00',
 	"is_running"	INTEGER DEFAULT 0,
 	"is_enabled"	INTEGER DEFAULT 0,
 	"is_hidden"	INTEGER DEFAULT 1,
