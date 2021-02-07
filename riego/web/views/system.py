@@ -1,6 +1,7 @@
 import aiohttp_jinja2
 from aiohttp import web
 
+from riego.model.parameters import get_parameters
 
 import asyncio
 import sys
@@ -65,6 +66,26 @@ async def system_exc(request):
     return {}
 
 
+@router.get("/system/parameters")
+@aiohttp_jinja2.template("system/parameters.html")
+async def parameters(request: web.Request):
+    items = {}
+    items['max_duration'] = get_parameters().max_duration
+    items['start_time_1'] = get_parameters().start_time_1
+    return {"items": items}
+
+
+@router.post("/system/parameters")
+@aiohttp_jinja2.template("system/parameters.html")
+async def parameters_apply(request: web.Request):
+    parameters = get_parameters()
+    items = await request.post()
+    for item in items:
+        if getattr(parameters, item, None) is not None:
+            setattr(parameters, item, items[item])
+    return {"items": items}
+
+
 async def _check_installed():
     version = "0.0.0"
     proc = await asyncio.create_subprocess_exec(
@@ -111,4 +132,3 @@ async def _do_update():
         "-q", "-q", "-q")
     await proc.wait()
     return proc.returncode
-

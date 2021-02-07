@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% set title = "Riego - Parameter" %}
+{% set active_menu = "system" %}
+
+
+{% block content %}
+<h1>Parameter</h1>
+
+<form action="/system/parameters" method="POST"
+      enctype="multipart/form-data">
+
+    {% for item in items %}
+    <div class="mb-3">
+        <label for="{{item}}" class="form-label">{{item}}</label>
+        <input id="{{item}}" name="{{item}}" value="{{items[item]}}" type="text" class="form-control">
+     </div>
+    {% endfor %}
+
+    <input type="submit">
+</form>
+
+{% endblock %}

@@ -15,11 +15,11 @@ def setup_parameters(app=None, options=None, db=None):
     global _instance
     if _instance is not None:
         del _instance
-    _instance = Var(app=app, options=options, db=db)
+    _instance = Parameters(app=app, options=options, db=db)
     return _instance
 
 
-class Var:
+class Parameters:
     def __init__(self, app=None, options=None, db=None):
         global _instance
         if _instance is None:
@@ -46,7 +46,7 @@ class Var:
 
     @max_duration.setter
     def max_duration(self, value):
-        self._start_time_1 = value
+        self._max_duration = value
         self._update_value_by_key(key="max_duration", value=value)
 
     def _update_value_by_key(self, key=None, value=None):
@@ -55,18 +55,15 @@ class Var:
                 self._db_conn.execute(
                     'UPDATE parameters SET value = ? WHERE key = ?',
                     (value, key))
-            return True
-        except IntegrityError as e:
-            _log.debug(f"Unable to update: {e}")
+        except IntegrityError:
+            pass
         try:
             with self._db_conn:
                 self._db_conn.execute(
                     "INSERT INTO parameters (key, value) VALUES (?,?)",
                     (key, value))
-            return True
-        except IntegrityError as e:
-            _log.error(f'Unable to insert: {e}')
-        return False
+        except IntegrityError:
+            pass
 
     def _load_all(self):
         c = self._db_conn.cursor()

@@ -71,7 +71,7 @@ class Timer():
         return None
 
     async def _dispatch_valve(self, valve):
-        _log.debug("dispatch_valve: {}".format(valve['name']))
+        # _log.debug("dispatch_valve: {}".format(valve['name']))
         if not self._mqtt.client.is_connected:
             return None
         if valve is None:
@@ -87,6 +87,7 @@ class Timer():
             return None
         if valve['is_running'] == 0 and not valve['one_is_on'] == 1:
             await self._check_to_switch_on(valve)
+            # TODO Waiting Timeout period
             await asyncio.sleep(1)
             return None
         return None
