@@ -7,12 +7,9 @@ db/*
 /PRIVATE.txt
 /CHANGELOG.md
 /requirements_dev.txt
+/riego.conf
 /tt.py
 /upload.bat
-
-/mqtt_mqtools.py
-/mqtt_paho_loop_example.py
-/mqtt_paho.py
 
 
 # Setuptools distribution folder.
