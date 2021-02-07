@@ -55,20 +55,20 @@ class Timer():
             await asyncio.sleep(3)
             await self._check_updates()
             c = self._db_conn.cursor()
-            c.execute("""SELECT MAX(valves.is_running) AS one_is_on, valves.*
-                        FROM valves
+            c.execute("""SELECT * FROM valves
                         ORDER BY valves.prio""")
             valves = c.fetchall()
             self._db_conn.commit()
 
-            c = self._db_conn.cursor()
-            c.execute("""SELECT MAX(valves.is_running) AS one_valve_is_on
-                        FROM valves""")
-            one_valve_is_on = c.fetchone()['one_valve_is_on']
-            self._db_conn.commit()
+            one_valve_is_on = 0
+            for valve in valves:
+                if valve['is_running'] == 1:
+                    one_valve_is_on = 1
+                    break
 
             for valve in valves:
-                await self._dispatch_valve(valve, one_valve_is_on)
+                if await self._dispatch_valve(valve, one_valve_is_on):
+                    break
         # Close last valve on exit
         if valve is not None:
             await self._valves.set_off_try(valve['id'])
@@ -80,30 +80,28 @@ class Timer():
     async def _dispatch_valve(self, valve, one_valve_is_on):
         # _log.debug("dispatch_valve: {}".format(valve['name']))
         if not self._mqtt.client.is_connected:
-            return None
+            return 0
         if valve is None:
-            return None
+            return 0
         if valve['duration'] == 0:
-            return None
+            return 0
         if valve['is_running'] == 1:
-            await self._check_to_switch_off(valve)
-            return None
+            return await self._check_to_switch_off(valve)
         if valve['is_hidden']:
-            return None
+            return 0
         if not valve['is_enabled']:
-            return None
+            return 0
         if valve['is_running'] == -1:
-            return None
+            return 0
         if valve['is_running'] == 0 and not one_valve_is_on == 1:
-            await self._check_to_switch_on(valve)
-            # TODO Waiting Timeout period
-            # await asyncio.sleep(1)
-            return None
-        return None
+            return await self._check_to_switch_on(valve)
+        return 0
 
     async def _check_to_switch_off(self, valve) -> bool:
-        ret = False
-        print("check_to_switch_off for id: {}".format(valve['id']))
+        """
+        If we had some action, we return True
+        """
+        _log.debug("check_to_switch_off for id: {}".format(valve['id']))
         if self._options.enable_timer_dev_mode:
             td = timedelta(minutes=0, seconds=valve['duration'])
         else:
@@ -113,11 +111,13 @@ class Timer():
             # Laufzeit erreicht
             await self._valves.set_off_try(valve['id'])
             _log.debug('valveOff: {}'.format(valve['name']))
-            ret = True
-        return ret
+            return True
+        return False
 
     async def _check_to_switch_on(self, valve) -> bool:
-        ret = False
+        """
+        If we had some action, we return True
+        """
         _log.debug("check_to_switch_on for id: {}".format(valve['id']))
         if self._options.enable_timer_dev_mode:
             td = timedelta(days=0, seconds=valve['interval'])
@@ -139,7 +139,8 @@ class Timer():
                 _log.error(f'update for last_shedule failed: {e}')
                 return False
             _log.debug('valveOn: {}'.format(valve['name']))
-        return ret
+            return True
+        return False
 
     def _shutdown(self, task) -> None:
         _log.debug('Timer Engine shutdown called')
