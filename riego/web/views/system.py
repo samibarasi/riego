@@ -72,6 +72,13 @@ async def parameters(request: web.Request):
     items = {}
     items['max_duration'] = get_parameters().max_duration
     items['start_time_1'] = get_parameters().start_time_1
+    items['smtp_hostname'] = get_parameters().smtp_hostname
+    items['smtp_port'] = get_parameters().smtp_port
+    items['smtp_security'] = get_parameters().smtp_security
+    items['smtp_user'] = get_parameters().smtp_user
+    items['smtp_password'] = get_parameters().smtp_password
+    items['smtp_from'] = get_parameters().smtp_from
+
     return {"items": items}
 
 

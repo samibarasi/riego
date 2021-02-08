@@ -26,8 +26,7 @@ from aiohttp import web
 import jinja2
 import aiohttp_jinja2
 import aiohttp_debugtoolbar
-from aiohttp_remotes import ForwardedRelaxed
-from aiohttp_remotes import setup as aiohttp_remotes_setup
+
 
 import base64
 from cryptography import fernet
@@ -104,10 +103,8 @@ def main():
                          # enable_async=True,
                          # context_processors=[alert_ctx_processor],
                          )
-
     setup_routes(app)
     setup_error_pages(app)
-    aiohttp_remotes_setup(app, ForwardedRelaxed)
 
     if options.enable_aiohttp_debug_toolbar:
         aiohttp_debugtoolbar.setup(
@@ -180,6 +177,7 @@ def _get_options():
           default=pkg_resources.resource_filename('riego.web', 'templates'))
     p.add('--websocket_path', help='url path for websocket',
           default="/ws")
+
     p.add('--time_format', help='Store and display time',
           default="%Y-%m-%d %H:%M:%S")
     p.add('--mqtt_cmnd_prefix', help='',
@@ -203,6 +201,13 @@ def _get_options():
           default="ON")
     p.add('--mqtt_keyword_OFF', help='',
           default="OFF")
+
+    p.add('--parameters_smtp_hostname', default="smtp.gmail.com")
+    p.add('--parameters_smtp_port', type=int, default=465)
+    p.add('--parameters_smtp_security', default="use_tls=True")
+    p.add('--parameters_smtp_user', default="user")
+    p.add('--parameters_smtp_password', default="password")
+    p.add('--parameters_smtp_from', default="riego@localhost")
 
     p.add('--parameters_start_time_1', default="19:00")
     p.add('--parameters_max_duartion', default="240")
