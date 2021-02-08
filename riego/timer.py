@@ -107,7 +107,7 @@ class Timer():
         else:
             td = timedelta(minutes=valve['duration'])
 
-        if datetime.now() - valve['last_run'] > td:
+        if datetime.now().replace(second=0, microsecond=0) - valve['last_run'] >= td:
             # Laufzeit erreicht
             await self._valves.set_off_try(valve['id'])
             _log.debug('valveOff: {}'.format(valve['name']))
@@ -125,7 +125,7 @@ class Timer():
             td = timedelta(days=valve['interval'])
 
         last_shedule = await self._is_running_period()
-        if (datetime.now() - valve['last_shedule'] > td and
+        if (datetime.now().replace(second=0, microsecond=0) - valve['last_shedule'] >= td and
                 last_shedule is not None):
             # Intervall erreicht
             await self._valves.set_on_try(valve['id'])
