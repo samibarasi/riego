@@ -107,7 +107,7 @@ class Timer():
         else:
             td = timedelta(minutes=valve['duration'])
 
-        if datetime.now().replace(second=0, microsecond=0) - valve['last_run'] >= td:
+        if datetime.now() - valve['last_run'] >= td:
             # Laufzeit erreicht
             await self._valves.set_off_try(valve['id'])
             _log.debug('valveOff: {}'.format(valve['name']))
@@ -124,16 +124,16 @@ class Timer():
         else:
             td = timedelta(days=valve['interval'])
 
-        last_shedule = await self._is_running_period()
-        if (datetime.now().replace(second=0, microsecond=0) - valve['last_shedule'] >= td and
-                last_shedule is not None):
+        current_shedule_datetime = await self._is_running_period()
+        if (datetime.now() - valve['last_shedule'] >= td and
+                current_shedule_datetime is not None):
             # Intervall erreicht
             await self._valves.set_on_try(valve['id'])
             try:
                 with self._db_conn:
                     self._db_conn.execute(
                         """UPDATE valves SET last_shedule = ? WHERE id = ? """,
-                        (last_shedule, valve['id']))
+                        (current_shedule_datetime, valve['id']))
             except IntegrityError as e:
                 pass
                 _log.error(f'update for last_shedule failed: {e}')
@@ -147,6 +147,11 @@ class Timer():
         self._stop = True
 
     async def _is_running_period(self) -> datetime:
+        """Return current Shedule Datetime if we have raining times
+
+        :return: [description]
+        :rtype: datetime
+        """
         max_duration = self._parameters.max_duration
         start_time_1 = self._parameters.start_time_1
         start_hour, start_minute = start_time_1.split(':')
