@@ -4,7 +4,6 @@ import pkg_resources
 import os
 from pathlib import Path
 import socket
-from typing import Dict, Any
 
 import logging
 from logging.handlers import RotatingFileHandler

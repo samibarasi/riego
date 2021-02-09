@@ -39,17 +39,17 @@ class Websockets():
             await ws.send_str(msg)
         return None
 
-    def subscribe(self, model: str, callback: callable) -> None:
+    def subscribe(self, scope: str, callback: callable) -> None:
         """Install a callback function for given model.
 
-        :param model: name of data model that asks for websocket
-        :type model: str
+        :param scope: name of scope that asks for websocket
+        :type scope: str
         :param callback: callback function that is called when data arrives
         :type callback: function with parameters msg
         :return: None
         :rtype: None
         """
-        self._subscriptions[model] = callback
+        self._subscriptions[scope] = callback
         return None
 
     async def _ws_handler(self, request) -> web.WebSocketResponse:

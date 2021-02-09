@@ -102,15 +102,6 @@ class Valves():
         await self._websockets.send_to_all(ret)
         return None
 
-    async def _send_document_reload_ws(self) -> None:
-        ret = {
-            'action': "reload",
-            'scope': "valves",
-        }
-        ret = json.dumps(ret)
-        await self._websockets.send_to_all(ret)
-        return None
-
     async def _send_mqtt(self,
                          box_topic=None,
                          channel_nr=None,
