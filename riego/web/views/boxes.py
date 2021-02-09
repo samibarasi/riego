@@ -4,6 +4,7 @@ from aiohttp import web
 
 from sqlite3 import IntegrityError
 from riego.db import get_db
+from riego.mqtt import get_mqtt
 
 from logging import getLogger
 _log = getLogger(__name__)
@@ -99,6 +100,20 @@ async def edit_apply(request: web.Request) -> web.Response:
 @router.get("/boxes/{item_id}/delete")
 async def delete(request: web.Request) -> web.Response:
     item_id = request.match_info["item_id"]
+    # TODO We should generate the mMQTT-message from a trigger
+    # from database
+
+    try:
+        c = get_db().conn.cursor()
+        c.execute('SELECT * FROM boxes WHERE id=?', (item_id,))
+        item = c.fetchone()
+        get_db().conn.commit()
+    except IntegrityError:
+        pass
+    else:
+        topic = 'tele/{}/LWT'.format(item['topic'])
+        get_mqtt().client.publish(topic, retain=True)
+
     try:
         with get_db().conn:
             get_db().conn.execute(

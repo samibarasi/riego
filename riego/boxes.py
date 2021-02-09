@@ -44,6 +44,8 @@ class Boxes():
 
     async def _mqtt_lwt_handler(self, topic: str, payload: str) -> bool:
         """Create a new box or update an existing box
+        This message comes from Tasmota only on startup and if
+        we send a message for delete this reatained message from mqtt broker
 
         :param topic: topic of mqtt message, "tele/+/LWT"
         :type topic: str
@@ -61,9 +63,13 @@ class Boxes():
         first_seen = datetime.now()
         if payload == "Online":
             online_since = first_seen
-        else:
+        if payload == "Offline":
             online_since = None
             # TODO set all "Valves" to "offline"
+        if payload is None or payload == '':
+            # Could be a retain delete message
+            return
+
         try:
             with self._db_conn:
                 self._db_conn.execute(
@@ -81,6 +87,8 @@ class Boxes():
     async def _mqtt_state_handler(self, topic: str, payload: str) -> bool:
         """Insert lines into valves table for every Channel found in
         "/tele/+/STATE" message
+
+        This message comes from Tasmota on startup and in intervalls
 
         :param topic: topic from mqtt message, "/tele/+/STATE"
         :type topic: str
@@ -115,6 +123,7 @@ class Boxes():
 
     async def _mqtt_info1_handler(self, topic: str, payload: str) -> bool:
         """Update existing box with additional info
+        This message comes from Tasmota only on startup
 
         :param topic: topic from mqtt message, "/tele/+/INFO1"
         :type topic: str
@@ -153,6 +162,7 @@ class Boxes():
 
     async def _mqtt_info2_handler(self, topic: str, payload: str) -> bool:
         """Update existing box with additional info
+        This message comes from Tasmota only on startup
 
         :param topic: topic from mqtt message, "/tele/+/INFO2"
         :type topic: str

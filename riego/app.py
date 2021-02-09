@@ -28,22 +28,7 @@ import aiohttp_jinja2
 import aiohttp_debugtoolbar
 
 
-import base64
-from cryptography import fernet
-from aiohttp_session import setup as setup_session, get_session
-from aiohttp_session.cookie_storage import EncryptedCookieStorage
-
-
 from riego import __version__
-
-
-async def alert_ctx_processor(request: web.Request) -> Dict[str, Any]:
-    # Jinja2 context processor
-    session = await get_session(request)
-    alert = session.get("alert")
-    session['alert'] = None
-    session.changed()
-    return {"alert": alert}
 
 
 def main():
@@ -92,10 +77,6 @@ def main():
                           mqtt=mqtt, websockets=websockets)
     setup_timer(app=app, options=options, db=db,
                 mqtt=mqtt, valves=valves, parameters=parameters)
-
-    fernet_key = fernet.Fernet.generate_key()
-    secret_key = base64.urlsafe_b64decode(fernet_key)
-    setup_session(app, EncryptedCookieStorage(secret_key))
 
     loader = jinja2.FileSystemLoader(options.http_server_template_dir)
     aiohttp_jinja2.setup(app,
