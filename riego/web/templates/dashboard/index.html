@@ -5,36 +5,46 @@
 
 {% block content %}
 
-{%for valve in valves if not valve.is_hidden %}
+{%for valve in valves %}
 
 <div class="bg-light p-3 rounded">
-    <h3>{{valve['name']}}</h3>
-    <label for="valves_{{valve['id']}}_duration" class="form-label">Dauer: {{valve['duration']}} Minuten</label>
+    <h4><a href="/valves/{{valve['id']}}/edit">{{valve['name']}}</a></h4>
+    <div class="row g-3">
+        <div class="col form-check">
+            <label class="form-check-label"><a href="#">{{valve['date_last_run']}}</a></label>
+        </div>
+        <div class="col form-check">
+            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="button" autocomplete="off"
+            onclick="document.getElementById('valves_{{valve['id']}}_fieldset_1').disabled = this.classList.contains('active')?false:true;this.blur()">Zeiten ändern</button>
+        </div>
+    </div>
+    <fieldset id="valves_{{valve['id']}}_fieldset_1" disabled>
+    <label for="valves_{{valve['id']}}_duration" class="form-label">Dauer: <span>{{valve['duration']}}</span> Minuten</label>
     <input type="range" class="form-range" min="0" max="90" id="valves_{{valve['id']}}_duration" autocomplete="off"
         value="{{valve['duration']}}"
         onchange="ws.send(JSON.stringify({action: 'update', scope: 'valves', id: '{{valve['id']}}', key: 'duration', value: this.value } ));this.blur();"
-        oninput="this.previousElementSibling.innerHTML = 'Dauer: ' + this.value + ' Minuten';">
+        oninput="this.previousElementSibling.children[0].innerHTML = this.value;">
 
-    <label for="valves_{{valve['id']}}_interval" class="form-label">Intervall: {{valve['interval']}} Tage</label>
+    <label for="valves_{{valve['id']}}_interval" class="form-label">Intervall: <span>{{valve['interval']}}</span> Tage</label>
     <input type="range" class="form-range" min="0" max="10" id="valves_{{valve['id']}}_interval" autocomplete="off"
         value="{{valve['interval']}}"
         onchange="ws.send(JSON.stringify({action: 'update', scope: 'valves', id: '{{valve['id']}}', key: 'interval', value: this.value } ));this.blur();"
-        oninput="this.previousElementSibling.innerHTML = 'Intervall: ' + this.value + ' Tage';">
-
+        oninput="this.previousElementSibling.children[0].innerHTML = this.value ;">
+    </fieldset>
 
     <div class="row g-3">
         <div class="col form-check form-switch">
             <input class="form-check-input" type="checkbox" id="valves_{{valve['id']}}_is_running" autocomplete="off" 
             {% if valve['is_running'] == 1 %} checked {% endif %}
                 onchange="ws.send(JSON.stringify({action: 'update', scope: 'valves', id: '{{ valve['id'] }}', key: 'is_running', value: this.checked } ))">
-            <label class="form-check-label" for="valves_{{valve['id']}}_is_running">Offen</label>
+            <label class="form-check-label" for="valves_{{valve['id']}}_is_running">An/Aus</label>
         </div>
 
         <div class="col form-check">
             <input class="form-check-input" type="checkbox" value="" id="valves_{{valve['id']}}_is_enabled" autocomplete="off"
                 {% if valve['is_enabled'] == 1 %} checked {% endif %}
                 onchange="ws.send(JSON.stringify({action: 'update', scope: 'valves', id: '{{valve['id'] }}', key: 'is_enabled', value: this.checked } ))">
-            <label class="form-check-label" for="valves_{{valve['id']}}_is_enabled">Einschalten durch Timer?</label>
+            <label class="form-check-label" for="valves_{{valve['id']}}_is_enabled">Automatik</label>
         </div>
     </div>
     
@@ -72,10 +82,12 @@
                     }
                     if (el.hasAttribute('value')) {
                         el.value = data.value;
+                        el.previousElementSibling.children[0].innerHTML = data.value
                     }
                     if (el.checked !== "undefined") {
                         el.checked = data.value
                     }
+                    el.blur();
                     break;
                 case 'reload':
                     location.reload(true);

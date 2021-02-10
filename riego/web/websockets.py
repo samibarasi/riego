@@ -1,5 +1,6 @@
 from aiohttp import web
 import json
+import asyncio
 from logging import getLogger
 _log = getLogger(__name__)
 
@@ -93,7 +94,8 @@ class Websockets():
         return True
 
     async def shutdown(self, app) -> None:
+        loop = asyncio.get_event_loop()
         for ws in self._ws_list:
             _log.debug(f'calling ws.close for: {ws}')
-            await ws.close()
+            loop.create_task(ws.close())
         return None
