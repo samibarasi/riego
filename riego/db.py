@@ -69,7 +69,7 @@ class Db:
         with backend.lock():
             backend.apply_migrations(backend.to_apply(migrations))
 
-    def _db_to_websocket(self, scope:str, action:str):
+    def _db_to_websocket(self, scope: str, action: str):
         """Dispatch callback from database and send
         a message to client Browser with websocket
 
