@@ -68,6 +68,12 @@ class Db:
                 AFTER UPDATE ON events
                 BEGIN SELECT db_to_websocket('events', 'reload'); END""")
 
+        self.conn.execute("DROP TRIGGER IF EXISTS t_boxes_update")
+        self.conn.execute("""CREATE TRIGGER t_boxes_update
+                AFTER UPDATE ON boxes
+                BEGIN SELECT db_to_websocket('boxes', 'reload'); END""")
+
+
 
     def _do_migrations(self, options):
         try:

@@ -1,6 +1,7 @@
 from typing import Any, Dict
 import aiohttp_jinja2
 from aiohttp import web
+import asyncio
 
 from sqlite3 import IntegrityError
 from riego.db import get_db
@@ -122,4 +123,23 @@ async def delete(request: web.Request) -> web.Response:
     except IntegrityError as e:
         _log.debug(f'box.view delete: {e}')
     raise web.HTTPSeeOther(location="/boxes")
+    return {}  # Not reached
+
+
+@router.get("/boxes/{item_id}/restart")
+async def restart(request: web.Request) -> web.Response:
+    item_id = request.match_info["item_id"]
+    try:
+        c = get_db().conn.cursor()
+        c.execute('SELECT * FROM boxes WHERE id=?', (item_id,))
+        item = c.fetchone()
+        get_db().conn.commit()
+    except IntegrityError:
+        pass
+    else:
+        topic = 'cmnd/{}/Restart'.format(item['topic'])
+        message = '1'
+        get_mqtt().client.publish(topic, message)
+        await asyncio.sleep(10)
+    raise web.HTTPSeeOther(location=f"/boxes/{item_id}")
     return {}  # Not reached

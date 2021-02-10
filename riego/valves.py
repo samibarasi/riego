@@ -238,7 +238,8 @@ class Valves():
                     ORDER BY events.created_at DESC""", (valve['id'],))
         event = c.fetchone()
         if event is None:
-            _log.error("Event not found")
+            # Will happen after restart of Box
+            _log.info("Event not found")
             return None
         self._db_conn.commit()
         # TODO sqlite should convert to datetime object

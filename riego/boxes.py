@@ -55,6 +55,10 @@ class Boxes():
         :rtype: bool
         """
         _log.debug(f'LWT: {topic}, payload: {payload}')
+        if payload is None or payload == '':
+            # Could be a retain delete message
+            return
+
         box_topic = re.search('/(.*?)/', topic)
         if box_topic is None:
             return False
@@ -66,9 +70,6 @@ class Boxes():
         if payload == "Offline":
             online_since = None
             # TODO set all "Valves" to "offline"
-        if payload is None or payload == '':
-            # Could be a retain delete message
-            return
 
         try:
             with self._db_conn:
@@ -98,6 +99,9 @@ class Boxes():
         :rtype: bool
         """
         _log.debug(f'State: {topic}, payload: {payload}')
+        if payload is None or payload == '':
+            # Could be a config message
+            return False
 
         box_id, box_topic = await self._get_box_id_by_topic(topic=topic)
 
@@ -133,6 +137,10 @@ class Boxes():
         :rtype: bool
         """
         _log.debug(f'Info1: {topic}, payload: {payload}')
+        if payload is None or payload == '':
+            # Could be a config message
+            return False
+
         box_id, box_topic = await self._get_box_id_by_topic(topic=topic)
 
         payload = json.loads(payload)
@@ -172,6 +180,10 @@ class Boxes():
         :rtype: bool
         """
         _log.debug(f'Info2: {topic}, payload: {payload}')
+        if payload is None or payload == '':
+            # Could be a config message
+            return False
+
         box_id, box_topic = await self._get_box_id_by_topic(topic=topic)
 
         payload = json.loads(payload)
