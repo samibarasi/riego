@@ -28,5 +28,38 @@
 
 
 
+
+    <script>
+        var ws = null;
+        function start (){
+            var wsUri = (window.location.protocol == 'https:' && 'wss://' || 'ws://') + window.location.host + "{{app.options.websocket_path}}";
+            ws = new WebSocket(wsUri);
+            ws.onmessage = function (event) {
+                data = JSON.parse(event.data);
+                if (data.scope != 'events') {
+                    return
+                }
+                switch (data.action) {
+                    case 'reload':
+                        location.reload(true);
+                        break;
+                    default:
+                        break;
+                }
+            };
+            ws.onclose = function(){
+                //reconnect now
+                check();
+            };
+        };
+        function check(){
+            if(!ws || ws.readyState == 3) start();
+        }
+        start();
+        setInterval(check, 5000);
+    
+    </script>
+
+
 {% endblock %}
 

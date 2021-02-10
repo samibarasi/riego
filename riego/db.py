@@ -58,6 +58,17 @@ class Db:
                 WHEN old.is_hidden <> new.is_hidden
                 BEGIN SELECT db_to_websocket('valves', 'reload'); END""")
 
+        self.conn.execute("DROP TRIGGER IF EXISTS t_events_insert")
+        self.conn.execute("""CREATE TRIGGER t_events_insert
+                AFTER INSERT ON events
+                BEGIN SELECT db_to_websocket('events', 'reload'); END""")
+
+        self.conn.execute("DROP TRIGGER IF EXISTS t_events_update")
+        self.conn.execute("""CREATE TRIGGER t_events_update
+                AFTER UPDATE ON events
+                BEGIN SELECT db_to_websocket('events', 'reload'); END""")
+
+
     def _do_migrations(self, options):
         try:
             backend = get_backend('sqlite:///' + options.db_filename)

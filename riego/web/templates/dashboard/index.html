@@ -55,22 +55,16 @@
 
 {%endfor%}
 
-
-<div class="form-floating">
-    <textarea class="form-control" placeholder="Leave a comment here" autocomplete="off" id="floating_1_Textarea2"
-        style="height: 100px"></textarea>
-    <label for="floatingTextarea2">Comments</label>
-</div>
-
 <script>
     var ws = null;
     function start (){
         var wsUri = (window.location.protocol == 'https:' && 'wss://' || 'ws://') + window.location.host + "{{app.options.websocket_path}}";
         ws = new WebSocket(wsUri);
         ws.onmessage = function (event) {
-            el_debug = document.getElementById('floating_1_Textarea2');
-            el_debug.value = event.data;
             data = JSON.parse(event.data);
+            if (data.scope != 'valves') {
+                return
+            }
             switch (data.action) {
                 case 'status':
                     dom_id = data.scope + "_" + data.id + "_" + data.key
