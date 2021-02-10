@@ -51,12 +51,12 @@ class Db:
 
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.conn.row_factory = sqlite3.Row
-        self.conn.create_function("handler", 1, self._db_handler)
+        self.conn.create_function("db_to_websocket", 2, self._db_to_websocket)
         self.conn.execute("DROP TRIGGER IF EXISTS t_valves_update")
         self.conn.execute("""CREATE TRIGGER t_valves_update
                 AFTER UPDATE ON valves
                 WHEN old.is_hidden <> new.is_hidden
-                BEGIN SELECT handler(NEW.id); END""")
+                BEGIN SELECT db_to_websocket('valves', 'reload'); END""")
 
     def _do_migrations(self, options):
         try:
@@ -69,19 +69,23 @@ class Db:
         with backend.lock():
             backend.apply_migrations(backend.to_apply(migrations))
 
-    def _db_handler(self, row):
-        pass
-#        loop = asyncio.get_event_loop()
-#        loop.run_until_complete(self._send_document_reload_ws('valves'))
+    def _db_to_websocket(self, scope:str, action:str):
+        """Dispatch callback from database and send
+        a message to client Browser with websocket
 
-    async def _send_document_reload_ws(self, scope) -> None:
-        ret = {
-            'action': "reload",
+        :param scope: Name of functional part of Webpage
+        :type scope: str
+        :param action: Action that the Webpage should do
+        :type action: str
+        """
+        message = {
+            'action': action,
             'scope': scope,
         }
-        ret = json.dumps(ret)
-        await get_websockets().websockets.send_to_all(ret)
-        return None
+        message = json.dumps(message)
+        ws = get_websockets()
+        loop = asyncio.get_event_loop()
+        loop.create_task(ws.send_to_all(message))
 
     def __del__(self):
         try:
