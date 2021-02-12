@@ -7,7 +7,6 @@
 <h1>{{ item['name'] }}</h1>
 <ul>
     <li>id: {{item['id']}}</li>
-    <li>name: {{item['name']}}</li>
 	<li>remark: {{item['remark']}}</li>
     <li>channel_nr: {{item['channel_nr']}}</li>
 	<li>duration: {{item['duration']}}</li>
@@ -25,7 +24,7 @@
 </ul>
 
 <p>
-    <a href="/valves">list</a> 
-    <a href="/valves/{{ item['id'] }}/edit">edit</a>
+    <a href="{{url('valves')}}">list</a> 
+    <a href="{{url('valves_item_edit',item_id=item['id'])}}">edit</a>
 </p>
 {% endblock %}

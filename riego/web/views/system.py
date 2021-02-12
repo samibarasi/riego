@@ -17,7 +17,7 @@ def setup_routes_system(app):
     app.add_routes(router)
 
 
-@router.get("/system")
+@router.get("/system", name='system')
 @aiohttp_jinja2.template('system/index.html')
 async def system_index(request):
     installed_version = await _check_installed()
@@ -26,33 +26,32 @@ async def system_index(request):
         text = '''Diese Riego Instanz läuft in der Version {}
                 und entspricht nicht der installierten Version {}.'''  # noqa: E501
         text = text.format(__version__, installed_version)
-
     return {'text': text}
 
 
-@router.get("/system/check_update")
+@router.get("/system/check_update", name='system_check_update')
 @aiohttp_jinja2.template('system/index.html')
 async def system_check_update(request):
     update = await _check_update("No update")
     return {'text':  update}
 
 
-@router.get("/system/do_update")
+@router.get("/system/do_update", name='system_do_update')
 @aiohttp_jinja2.template('system/index.html')
 async def system_do_update(request):
     await _do_update()
     return {'text': "Restart erforderlich"}
 
 
-@router.get("/system/restart")
+@router.get("/system/restart", name='system_restart')
 @aiohttp_jinja2.template('system/index.html')
 async def system_restart(request):
     # TODO shedule exit for a few seconds and return a redirect
     asyncio.get_event_loop().call_later(1, exit, 0)
-    raise web.HTTPSeeOther(location="/system")
+    raise web.HTTPSeeOther(request.app.router['system'].url_for())
 
 
-@router.get("/system/log_file")
+@router.get("/system/log_file", name='system_log_file')
 @aiohttp_jinja2.template('system/index.html')
 async def system_log_file(request):
     with open(request.app['options'].log_file, "rt") as fp:
@@ -60,13 +59,7 @@ async def system_log_file(request):
         # return {'text': fp.read()}
 
 
-@router.get("/system/system_exc")
-async def system_exc(request):
-    raise NotImplementedError
-    return {}
-
-
-@router.get("/system/parameters")
+@router.get("/system/parameters", name='system_parameters')
 @aiohttp_jinja2.template("system/parameters.html")
 async def parameters(request: web.Request):
     items = {}

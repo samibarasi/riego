@@ -22,8 +22,8 @@
 </ul>
 
 <p>
-    <a href="/boxes">list</a> 
-    <a href="/boxes/{{ item['id'] }}/restart">Restart</a>
-    <a href="/boxes/{{ item['id'] }}/edit">edit</a>
+    <a href="{{url('boxes')}}">list</a> 
+    <a href="{{url('boxes_item_restart',item_id=item['id'])}}">Restart</a>
+    <a href="{{url('boxes_item_edit',item_id=item['id'])}}">edit</a>
 </p>
 {% endblock %}

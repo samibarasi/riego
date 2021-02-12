@@ -10,14 +10,14 @@
   <ul>
     {% for item in items %}
     <li>
-      <a href="/boxes/{{ item['id'] }}">{{ item['name'] }}</a> {{ item['topic'] }}
+      <a href="{{url('boxes_item_view', item_id=item['id']) }}">{{ item['name'] }}</a> {{ item['topic'] }}
     </li>
     {% endfor %}
   </ul>
 </p>
 <hr>
 <p>
-  <a href="/boxes/new">New</a> 
+  <a href="{{url('boxes_new')}}">New</a> 
 </p>
 
 {% endblock %}

@@ -11,29 +11,29 @@ def setup_routes_events(app):
     app.add_routes(router)
 
 
-@router.get("/events")
+@router.get("/events", name='events')
 @aiohttp_jinja2.template('events/index.html')
 async def event_index(request):
-    c = get_db().conn.cursor()
-    c.execute('''SELECT events.*, valves.name
+    cursor = get_db().conn.cursor()
+    cursor.execute('''SELECT events.*, valves.name
                 FROM events, valves
                 WHERE events.valve_id = valves.id
                 ORDER BY events.created_at DESC''')
-    items = c.fetchall()
+    items = cursor.fetchall()
     get_db().conn.commit()
     return {'items': items}
 
 
-@router.get("/events/{item_id}/filter")
+@router.get("/events/{item_id}/filter", name='events_item_filter')
 @aiohttp_jinja2.template('events/index.html')
 async def event_filter(request):
     item_id = request.match_info["item_id"]
-    c = get_db().conn.cursor()
-    c.execute('''SELECT events.*, valves.name
+    cursor = get_db().conn.cursor()
+    cursor.execute('''SELECT events.*, valves.name
                 FROM events, valves
                 WHERE events.valve_id = valves.id
                 AND valves.id = ?
                 ORDER BY events.created_at DESC''', (item_id,))
-    items = c.fetchall()
+    items = cursor.fetchall()
     get_db().conn.commit()
     return {'items': items}

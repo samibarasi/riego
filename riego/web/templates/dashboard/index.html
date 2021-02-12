@@ -8,10 +8,10 @@
 {%for valve in valves %}
 
 <div class="bg-light p-3 rounded">
-    <h4><a href="/valves/{{valve['id']}}/edit">{{valve['name']}}</a></h4>
+    <h4><a href="{{url('valves_item_edit', item_id=valve['id']) }}">{{valve['name']}}</a></h4>
     <div class="row g-3">
         <div class="col form-check">
-            <label class="form-check-label"><a href="/events/{{valve['id']}}/filter">{{valve['date_last_run']}}</a></label>
+            <label class="form-check-label"><a href="{{url('events_item_filter', item_id=valve['id']) }}">{{valve['date_last_run']}}</a></label>
         </div>
         <div class="col form-check">
             <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="button" autocomplete="off"
@@ -58,7 +58,7 @@
 <script>
     var ws = null;
     function start (){
-        var wsUri = (window.location.protocol == 'https:' && 'wss://' || 'ws://') + window.location.host + "{{app.options.websocket_path}}";
+        var wsUri = (window.location.protocol == 'https:' && 'wss://' || 'ws://') + window.location.host + "{{url('websockets')}}";
         ws = new WebSocket(wsUri);
         ws.onmessage = function (event) {
             data = JSON.parse(event.data);

@@ -32,7 +32,9 @@ class Websockets():
         self._ws_list = []
         self._subscriptions = {}
 
-        app.router.add_get(self._options.websocket_path, self._ws_handler)
+        app.router.add_get(self._options.websocket_path,
+                           self._ws_handler,
+                           name='websockets')
         app.on_shutdown.append(self.shutdown)
 
     async def send_to_all(self, msg: dict) -> None:

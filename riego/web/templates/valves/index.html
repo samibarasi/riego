@@ -10,14 +10,14 @@
   <ul>
     {% for item in items %}
     <li>
-      <a href="/valves/{{ item['id'] }}">{{ item['name'] }}</a> {{ item['topic'] }} {{ item['box_name'] }} {{ item['channel_nr']}}
+      <a href="{{url('valves_item_view', item_id=item['id']) }}">{{ item['name'] }}</a> {{ item['topic'] }} {{ item['box_name'] }} {{ item['channel_nr']}}
     </li>
     {% endfor %}
   </ul>
 </p>
 <hr>
 <p>
-  <a href="/valves/new">New</a> 
+  <a href="{{url('valves_new')}}">New</a> 
 </p>
 
 {% endblock %}

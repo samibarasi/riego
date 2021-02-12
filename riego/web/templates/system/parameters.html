@@ -7,8 +7,7 @@
 {% block content %}
 <h1>Parameter</h1>
 
-<form action="/system/parameters" method="POST"
-      enctype="multipart/form-data">
+<form action="{{url('system_parameters')}}" method="POST" enctype="multipart/form-data">
 
     {% for item in items %}
     <div class="mb-3">

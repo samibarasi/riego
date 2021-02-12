@@ -6,7 +6,7 @@
 
 {% block content %}
 <h1>Edit: {{ item['name'] }}</h1>
-<form action="/valves/{{ item['id'] }}/edit" method="POST"
+<form action="{{url('valves_item_edit', item_id=item['id']) }}/edit" method="POST"
       enctype="multipart/form-data">
 
       <div class="mb-3">
@@ -55,8 +55,8 @@
 <hr>
 
 <p>
-  <a href="/valves">list</a>
-  <a href="/valves/{{ item['id'] }}">view</a>
-  <a href="/valves/{{ item['id'] }}/delete">delete</a>
+  <a href="{{url('valves')}}"">list</a>
+  <a href="{{url('valves_item_view', item_id=item['id']) }}">view</a>
+  <a href="{{url('valves_item_delete', item_id=item['id']) }}">delete</a>
 </p>
 {% endblock %}

@@ -90,9 +90,17 @@ def main():
         aiohttp_debugtoolbar.setup(
             app, check_host=False, intercept_redirects=False)
 
+    main_app = web.Application()
+
+    async def main_app_handler(request):
+        raise web.HTTPSeeOther('/riego/')
+
+    main_app.router.add_get('/', main_app_handler)
+    main_app.add_subapp('/riego/', app)
+
     logging.getLogger(__name__).info("Start")
 
-    web.run_app(app,
+    web.run_app(main_app,
                 host=options.http_server_bind_address,
                 port=options.http_server_bind_port)
 

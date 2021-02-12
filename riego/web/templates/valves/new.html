@@ -6,7 +6,7 @@
 
 {% block content %}
 <h1>New Item</h1>
-<form action="/valves/new" method="POST"
+<form action="{{url('valves_new')}}" method="POST"
       enctype="multipart/form-data">
 
       <div class="mb-3">
@@ -29,6 +29,6 @@
 </form>
 <hr>
 <p>
-  <a href="/valves">list</a> 
+  <a href="{{url('valves')}}">list</a>
 </p>
 {% endblock %}

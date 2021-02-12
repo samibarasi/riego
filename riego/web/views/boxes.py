@@ -17,7 +17,7 @@ def setup_routes_boxes(app):
     app.add_routes(router)
 
 
-@router.get("/boxes")
+@router.get("/boxes", name='boxes')
 @aiohttp_jinja2.template("boxes/index.html")
 async def index(request: web.Request) -> Dict[str, Any]:
     c = get_db().conn.cursor()
@@ -27,7 +27,7 @@ async def index(request: web.Request) -> Dict[str, Any]:
     return {"items": items}
 
 
-@router.get("/boxes/new")
+@router.get("/boxes/new", name='boxes_new')
 @aiohttp_jinja2.template("boxes/new.html")
 async def new(request: web.Request) -> Dict[str, Any]:
     return {}
@@ -39,43 +39,44 @@ async def new_apply(request: web.Request) -> Dict[str, Any]:
     item = await request.post()
     try:
         with get_db().conn:
-            cursor = get_db.conn.execute(
+            cursor = get_db().conn.execute(
                 ''' INSERT INTO boxes
                 (topic, name, remark)
                 VALUES (?, ?, ?) ''',
                 (item['topic'], item['name'], item['remark']))
     except IntegrityError as e:
         _log.debug(f'box.view add: {e}')
-        raise web.HTTPSeeOther(location="/boxes/new")
+        raise web.HTTPSeeOther(request.app.router['boxes_new'].url_for())
     else:
-        item_id = cursor.lastrowid
-        raise web.HTTPSeeOther(location=f"/boxes/{item_id}")
+        item_id = str(cursor.lastrowid)
+        raise web.HTTPSeeOther(
+            request.app.router['boxes_item_view'].url_for(item_id=item_id))
     return {}  # not reached
 
 
-@router.get("/boxes/{item_id}")
+@router.get("/boxes/{item_id}", name='boxes_item_view')
 @aiohttp_jinja2.template("boxes/view.html")
 async def view(request: web.Request) -> Dict[str, Any]:
     item_id = request.match_info["item_id"]
-    c = get_db().conn.cursor()
-    c.execute('SELECT * FROM boxes WHERE id=?', (item_id,))
-    item = c.fetchone()
+    cursor = get_db().conn.cursor()
+    cursor.execute('SELECT * FROM boxes WHERE id=?', (item_id,))
+    item = cursor.fetchone()
     get_db().conn.commit()
     if item is None:
-        raise web.HTTPSeeOther(location="/boxes")
+        raise web.HTTPSeeOther(request.app.router['boxes'].url_for())
     return {"item": item}
 
 
-@router.get("/boxes/{item_id}/edit")
+@router.get("/boxes/{item_id}/edit", name='boxes_item_edit')
 @aiohttp_jinja2.template("boxes/edit.html")
 async def edit(request: web.Request) -> Dict[str, Any]:
     item_id = request.match_info["item_id"]
-    c = get_db().conn.cursor()
-    c.execute('SELECT * FROM boxes WHERE id=?', (item_id,))
-    item = c.fetchone()
+    cursor = get_db().conn.cursor()
+    cursor.execute('SELECT * FROM boxes WHERE id=?', (item_id,))
+    item = cursor.fetchone()
     get_db().conn.commit()
     if item is None:
-        raise web.HTTPSeeOther(location="/boxes")
+        raise web.HTTPSeeOther(request.app.router['boxes'].url_for())
     return {"item": item}
 
 
@@ -92,22 +93,24 @@ async def edit_apply(request: web.Request) -> web.Response:
                 (item['name'], item['remark'], item_id))
     except IntegrityError as e:
         _log.debug(f'box.view edit: {e}')
-        raise web.HTTPSeeOther(location=f"/boxes/{item_id}/edit")
+        raise web.HTTPSeeOther(
+            request.app.router['boxes_item_edit'].url_for(item_id=item_id))
     else:
-        raise web.HTTPSeeOther(location=f"/boxes/{item_id}")
+        raise web.HTTPSeeOther(
+            request.app.router['boxes_item_view'].url_for(item_id=item_id))
     return {}  # Not reached
 
 
-@router.get("/boxes/{item_id}/delete")
+@router.get("/boxes/{item_id}/delete", name='boxes_item_delete')
 async def delete(request: web.Request) -> web.Response:
     item_id = request.match_info["item_id"]
     # TODO We should generate the mMQTT-message from a trigger
     # from database
 
     try:
-        c = get_db().conn.cursor()
-        c.execute('SELECT * FROM boxes WHERE id=?', (item_id,))
-        item = c.fetchone()
+        cursor = get_db().conn.cursor()
+        cursor.execute('SELECT * FROM boxes WHERE id=?', (item_id,))
+        item = cursor.fetchone()
         get_db().conn.commit()
     except IntegrityError:
         pass
@@ -121,18 +124,18 @@ async def delete(request: web.Request) -> web.Response:
                 'DELETE FROM boxes WHERE id = ?',
                 (item_id,))
     except IntegrityError as e:
-        _log.debug(f'box.view delete: {e}')
-    raise web.HTTPSeeOther(location="/boxes")
+        _log.debug(f'box.delete: {e}')
+    raise web.HTTPSeeOther(request.app.router['boxes'].url_for())
     return {}  # Not reached
 
 
-@router.get("/boxes/{item_id}/restart")
+@router.get("/boxes/{item_id}/restart", name='boxes_item_restart')
 async def restart(request: web.Request) -> web.Response:
     item_id = request.match_info["item_id"]
     try:
-        c = get_db().conn.cursor()
-        c.execute('SELECT * FROM boxes WHERE id=?', (item_id,))
-        item = c.fetchone()
+        cursor = get_db().conn.cursor()
+        cursor.execute('SELECT * FROM boxes WHERE id=?', (item_id,))
+        item = cursor.fetchone()
         get_db().conn.commit()
     except IntegrityError:
         pass
@@ -141,5 +144,6 @@ async def restart(request: web.Request) -> web.Response:
         message = '1'
         get_mqtt().client.publish(topic, message)
         await asyncio.sleep(10)
-    raise web.HTTPSeeOther(location=f"/boxes/{item_id}")
+    raise web.HTTPSeeOther(
+        request.app.router['boxes_item_view'].url_for(item_id=item_id))
     return {}  # Not reached
