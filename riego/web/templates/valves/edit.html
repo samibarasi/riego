@@ -6,7 +6,7 @@
 
 {% block content %}
 <h1>Edit: {{ item['name'] }}</h1>
-<form action="{{url('valves_item_edit', item_id=item['id']) }}/edit" method="POST"
+<form action="{{url('valves_item_edit', item_id=item['id']) }}" method="POST"
       enctype="multipart/form-data">
 
       <div class="mb-3">
