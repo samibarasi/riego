@@ -123,7 +123,7 @@ def _setup_logging(options=None):
     logging.basicConfig(level=level, handlers=[stream_handler, file_handler])
 
     logging.getLogger("gmqtt").setLevel(logging.ERROR)
-    logging.getLogger("aiohttp.access").setLevel(logging.ERROR)
+    logging.getLogger("aiohttp.access").setLevel(logging.DEBUG)
 
 
 def _get_options():

@@ -59,6 +59,7 @@
     var ws = null;
     function start (){
         var wsUri = (window.location.protocol == 'https:' && 'wss://' || 'ws://') + window.location.host + "{{url('websockets')}}";
+//        wsUri = "ws://192.168.88.227:8080/riego/ws"
         ws = new WebSocket(wsUri);
         ws.onmessage = function (event) {
             data = JSON.parse(event.data);
