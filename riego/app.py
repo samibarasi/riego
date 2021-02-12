@@ -122,8 +122,15 @@ def _setup_logging(options=None):
     Path(options.log_file).parent.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(level=level, handlers=[stream_handler, file_handler])
 
-    logging.getLogger("gmqtt").setLevel(logging.ERROR)
-    logging.getLogger("aiohttp.access").setLevel(logging.DEBUG)
+    if options.enable_gmqtt_debug_log :
+        logging.getLogger("gmqtt").setLevel(logging.DEBUG)
+    else:
+        logging.getLogger("gmqtt").setLevel(logging.ERROR)
+    
+    if options.enable_aiohttp_access_log :
+        logging.getLogger("aiohttp.access").setLevel(logging.DEBUG)
+    else:
+        logging.getLogger("aiohttp.access").setLevel(logging.ERROR)
 
 
 def _get_options():
@@ -201,7 +208,9 @@ def _get_options():
     p.add('--parameters_max_duartion', default="240")
 
     p.add('--enable_aiohttp_debug_toolbar', action='store_true')
+    p.add('--enable_aiohttp_access_log', action='store_true')
     p.add('--enable_asyncio_debug', action='store_true')
+    p.add('--enable_gmqtt_debug_log', action='store_true')
     p.add('--enable_timer_dev_mode', action='store_true')
 
     p.add('-v', '--verbose', help='verbose', action='store_true')
