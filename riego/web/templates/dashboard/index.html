@@ -41,7 +41,7 @@
         </div>
 
         <div class="col form-check">
-            <input class="form-check-input" type="checkbox" value="" id="valves_{{valve['id']}}_is_enabled" autocomplete="off"
+            <input class="form-check-input" type="checkbox" id="valves_{{valve['id']}}_is_enabled" autocomplete="off"
                 {% if valve['is_enabled'] == 1 %} checked {% endif %}
                 onchange="ws.send(JSON.stringify({action: 'update', scope: 'valves', id: '{{valve['id'] }}', key: 'is_enabled', value: this.checked } ))">
             <label class="form-check-label" for="valves_{{valve['id']}}_is_enabled">Automatik</label>
@@ -59,12 +59,11 @@
     var ws = null;
     function start (){
         var wsUri = (window.location.protocol == 'https:' && 'wss://' || 'ws://') + window.location.host + "{{url('websockets')}}";
-//        wsUri = "ws://192.168.88.227:8080/riego/ws"
         ws = new WebSocket(wsUri);
         ws.onmessage = function (event) {
             data = JSON.parse(event.data);
-            if (data.scope != 'valves') {
-                return
+            if (data.scope != "valves") {
+                return;
             }
             switch (data.action) {
                 case 'status':
