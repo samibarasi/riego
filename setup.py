@@ -26,6 +26,7 @@ setuptools.setup(
         'cchardet',
         'aiohttp_debugtoolbar',
         'aiohttp_session[secure]',
+        'aiohttp_remotes',
         'aiosmtplib',
     ],
     include_package_data=True,

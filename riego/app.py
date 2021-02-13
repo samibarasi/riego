@@ -25,10 +25,24 @@ from aiohttp import web
 import jinja2
 import aiohttp_jinja2
 import aiohttp_debugtoolbar
-from aiohttp_remotes import XForwardedRelaxed, setup as setup_remotes
 
 
 from riego import __version__
+
+
+async def on_startup(app):
+    logging.getLogger(__name__).debug("on_startup")
+    if app['options'].enable_asyncio_debug:
+        asyncio.get_event_loop().set_debug(True)
+
+
+
+async def on_shutdown(app):
+    logging.getLogger(__name__).debug("on_shutdown")
+
+
+async def on_cleanup(app):
+    logging.getLogger(__name__).debug("on_cleanup")
 
 
 def main():
@@ -123,12 +137,12 @@ def _setup_logging(options=None):
     Path(options.log_file).parent.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(level=level, handlers=[stream_handler, file_handler])
 
-    if options.enable_gmqtt_debug_log :
+    if options.enable_gmqtt_debug_log:
         logging.getLogger("gmqtt").setLevel(logging.DEBUG)
     else:
         logging.getLogger("gmqtt").setLevel(logging.ERROR)
-    
-    if options.enable_aiohttp_access_log :
+
+    if options.enable_aiohttp_access_log:
         logging.getLogger("aiohttp.access").setLevel(logging.DEBUG)
     else:
         logging.getLogger("aiohttp.access").setLevel(logging.ERROR)
@@ -140,37 +154,32 @@ def _get_options():
                               'riego.conf'])
     p.add('-c', '--config', is_config_file=True, env_var='RIEGO_CONF',
           required=False, help='config file path')
+# Database
     p.add('-d', '--db_filename', help='Path and name for DB file',
           default='db/riego.db')
     p.add('--db_migrations_dir',
           help='path to database migrations directory',
           default=pkg_resources.resource_filename('riego', 'migrations'))
+# Logging
     p.add('-l', '--log_file', help='Full path to logfile',
           default='log/riego.log')
     p.add('--log_max_bytes', help='Maximum Evet Log Size in bytes',
           default=1024*300, type=int)
     p.add('--log_backup_count', help='How many files to rotate',
           default=3, type=int)
-
+# Redis
     p.add('--redis_host', help='IP adress of mqtt host',
           default='127.0.0.1')
     p.add('--redis_port', help='Port of mqtt service',
           default=6379, type=int)
-
-    p.add('-m', '--mqtt_host', help='IP adress of mqtt host',
-          default='127.0.0.1')
-    p.add('-p', '--mqtt_port', help='Port of mqtt service',
-          default=1883, type=int)
-    p.add('--mqtt_client_id', help='Client ID for MQTT-Connection',
-          default=f'riego_ctrl_{socket.gethostname()}')
-    p.add('--mqtt_subscription_topic', help='MQTT Topic that we are listening',
-          default='riego/#')
-    p.add('--base_dir', help='Change only if you know what you are doing',
-          default=Path(__file__).parent)
+# HTTP-Server
     p.add('--http_server_bind_address',
           help='http-server bind address', default='0.0.0.0')
     p.add('--http_server_bind_port', help='http-server bind port',
           default=8080, type=int)
+# Directories
+    p.add('--base_dir', help='Change only if you know what you are doing',
+          default=Path(__file__).parent)
     p.add('--http_server_static_dir',
           help='Serve static html files from this directory',
           default=pkg_resources.resource_filename('riego.web', 'static'))
@@ -179,14 +188,16 @@ def _get_options():
           default=pkg_resources.resource_filename('riego.web', 'templates'))
     p.add('--websocket_path', help='url path for websocket',
           default="/ws")
+# MQTT
+    p.add('-m', '--mqtt_host', help='IP adress of mqtt host',
+          default='127.0.0.1')
+    p.add('-p', '--mqtt_port', help='Port of mqtt service',
+          default=1883, type=int)
+    p.add('--mqtt_client_id', help='Client ID for MQTT-Connection',
+          default=f'riego_ctrl_{socket.gethostname()}')
 
-    p.add('--time_format', help='Store and display time',
-          default="%Y-%m-%d %H:%M:%S")
-    p.add('--mqtt_cmnd_prefix', help='',
-          default="cmnd")
     p.add('--mqtt_result_subscription', help='used by class valves',
           default="stat/+/RESULT")
-
     p.add('--mqtt_lwt_subscription', help='used by class boxes',
           default="tele/+/LWT")
     p.add('--mqtt_state_subscription', help='used by class boxes',
@@ -199,11 +210,13 @@ def _get_options():
     p.add('--mqtt_sensor_subscription', help='yet not used',
           default="tele/+/SENSOR")
 
+    p.add('--mqtt_cmnd_prefix', help='',
+          default="cmnd")
     p.add('--mqtt_keyword_ON', help='',
           default="ON")
     p.add('--mqtt_keyword_OFF', help='',
           default="OFF")
-
+# Parameter Default Values
     p.add('--parameters_smtp_hostname', default="smtp.gmail.com")
     p.add('--parameters_smtp_port', type=int, default=465)
     p.add('--parameters_smtp_security', default="use_tls=True")
@@ -213,13 +226,13 @@ def _get_options():
 
     p.add('--parameters_start_time_1', default="19:00")
     p.add('--parameters_max_duartion', default="240")
-
+# Debug
     p.add('--enable_aiohttp_debug_toolbar', action='store_true')
     p.add('--enable_aiohttp_access_log', action='store_true')
     p.add('--enable_asyncio_debug', action='store_true')
     p.add('--enable_gmqtt_debug_log', action='store_true')
     p.add('--enable_timer_dev_mode', action='store_true')
-
+# Version, Help, Verbosity
     p.add('-v', '--verbose', help='verbose', action='store_true')
     p.add('--version', help='Print version and exit', action='store_true')
     p.add('--defaults', help='Print options with default values and exit',
@@ -232,15 +245,3 @@ def _get_options():
     return options
 
 
-async def on_startup(app):
-    logging.getLogger(__name__).debug("on_startup")
-    if app['options'].enable_asyncio_debug:
-        asyncio.get_event_loop().set_debug(True)
-    await setup_remotes(app, XForwardedRelaxed())
-
-async def on_shutdown(app):
-    logging.getLogger(__name__).debug("on_shutdown")
-
-
-async def on_cleanup(app):
-    logging.getLogger(__name__).debug("on_cleanup")
