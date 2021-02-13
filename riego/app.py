@@ -2,6 +2,7 @@ import asyncio
 import configargparse
 import pkg_resources
 import os
+import sys
 from pathlib import Path
 import socket
 import time
@@ -38,11 +39,10 @@ from riego import __version__
 
 async def on_startup(app):
     logging.getLogger(__name__).debug("on_startup")
-    if app['options'].enable_asyncio_debug:
-        asyncio.get_event_loop().set_debug(True)
 
 
 async def on_shutdown(app):
+    await app['mc'].close()
     logging.getLogger(__name__).debug("on_shutdown")
 
 
@@ -50,10 +50,28 @@ async def on_cleanup(app):
     logging.getLogger(__name__).debug("on_cleanup")
 
 
-async def makeapp(loop):
+def main():
     options = _get_options()
 
     _setup_logging(options=options)
+
+    if sys.version_info >= (3, 8) and options.WindowsSelectorEventLoopPolicy:
+        asyncio.DefaultEventLoopPolicy = asyncio.WindowsSelectorEventLoopPolicy  # noqa: E501
+
+    if os.name == "posix":
+        import uvloop  # pylint: disable=import-error
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+
+    web.run_app(run_app(options=options),
+                host=options.http_server_bind_address,
+                port=options.http_server_bind_port)
+
+
+async def run_app(options=None):
+    loop = asyncio.get_event_loop()
+
+    if options.enable_asyncio_debug:
+        loop.set_debug(True)
 
     try:
         with open('riego.conf', 'xt') as f:
@@ -70,13 +88,6 @@ async def makeapp(loop):
     if options.version:
         print('Version: ', __version__)
         exit(0)
-
-#    if sys.version_info >= (3, 8):
-#        asyncio.DefaultEventLoopPolicy = asyncio.WindowsSelectorEventLoopPolicy  # noqa: E501
-
-    if os.name == "posix":
-        import uvloop  # pylint: disable=import-error
-        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
     app = web.Application()
 
@@ -103,6 +114,8 @@ async def makeapp(loop):
                          # enable_async=True,
                          # context_processors=[alert_ctx_processor],
                          )
+
+    await setup_remotes(app, XForwardedRelaxed())
     setup_routes(app)
     setup_error_pages(app)
 
@@ -110,8 +123,8 @@ async def makeapp(loop):
         aiohttp_debugtoolbar.setup(
             app, check_host=False, intercept_redirects=False)
 
-    mc = aiomcache.Client(options.memcached_host,
-                          options.memcached_port, loop=loop)
+    mc = aiomcache.Client(options.memcached_host, options.memcached_port, loop=loop)
+    app['mc'] = mc
     session_setup(app, MemcachedStorage(mc))
 
     async def session_test(request):
@@ -132,19 +145,8 @@ async def makeapp(loop):
 
     logging.getLogger(__name__).info("Start")
 
-#    async def tt(app):
-#        await setup_remotes(app, XForwardedRelaxed())
-#    main_app.on_startup.append(tt)
+
     return main_app
-
-
-def main():
-    loop = asyncio.get_event_loop()
-    main_app = loop.run_until_complete(makeapp(loop))
-
-    web.run_app(main_app, host="0.0.0.0", port=8080)
-#                host=options.http_server_bind_address,
-#                port=options.http_server_bind_port)
 
 
 def _setup_logging(options=None):
@@ -264,6 +266,8 @@ def _get_options():
     p.add('--enable_asyncio_debug', action='store_true')
     p.add('--enable_gmqtt_debug_log', action='store_true')
     p.add('--enable_timer_dev_mode', action='store_true')
+    p.add('--WindowsSelectorEventLoopPolicy', action='store_true')
+
 # Version, Help, Verbosity
     p.add('-v', '--verbose', help='verbose', action='store_true')
     p.add('--version', help='Print version and exit', action='store_true')
