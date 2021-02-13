@@ -25,6 +25,7 @@ from aiohttp import web
 import jinja2
 import aiohttp_jinja2
 import aiohttp_debugtoolbar
+from aiohttp_remotes import XForwardedRelaxed, setup as setup_remotes
 
 
 from riego import __version__
@@ -150,6 +151,12 @@ def _get_options():
           default=1024*300, type=int)
     p.add('--log_backup_count', help='How many files to rotate',
           default=3, type=int)
+
+    p.add('--redis_host', help='IP adress of mqtt host',
+          default='127.0.0.1')
+    p.add('--redis_port', help='Port of mqtt service',
+          default=6379, type=int)
+
     p.add('-m', '--mqtt_host', help='IP adress of mqtt host',
           default='127.0.0.1')
     p.add('-p', '--mqtt_port', help='Port of mqtt service',
@@ -229,7 +236,7 @@ async def on_startup(app):
     logging.getLogger(__name__).debug("on_startup")
     if app['options'].enable_asyncio_debug:
         asyncio.get_event_loop().set_debug(True)
-
+    await setup_remotes(app, XForwardedRelaxed())
 
 async def on_shutdown(app):
     logging.getLogger(__name__).debug("on_shutdown")
