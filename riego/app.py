@@ -5,7 +5,7 @@ import os
 import sys
 from pathlib import Path
 import socket
-import time
+
 
 import logging
 from logging.handlers import RotatingFileHandler
@@ -21,6 +21,7 @@ from riego.model.parameters import setup_parameters
 from riego.web.websockets import setup_websockets
 from riego.web.routes import setup_routes
 from riego.web.error_pages import setup_error_pages
+from riego.web.http_sessions import setup_http_sessions
 
 
 from aiohttp import web
@@ -28,10 +29,6 @@ import jinja2
 import aiohttp_jinja2
 import aiohttp_debugtoolbar
 from aiohttp_remotes import setup as setup_remotes, XForwardedRelaxed
-
-import aiomcache
-from aiohttp_session import setup as session_setup, get_session
-from aiohttp_session.memcached_storage import MemcachedStorage
 
 
 from riego import __version__
@@ -42,7 +39,6 @@ async def on_startup(app):
 
 
 async def on_shutdown(app):
-    await app['mc'].close()
     logging.getLogger(__name__).debug("on_shutdown")
 
 
@@ -116,24 +112,13 @@ async def run_app(options=None):
                          )
 
     await setup_remotes(app, XForwardedRelaxed())
+    setup_http_sessions(app=app, options=options)
     setup_routes(app)
     setup_error_pages(app)
 
     if options.enable_aiohttp_debug_toolbar:
         aiohttp_debugtoolbar.setup(
             app, check_host=False, intercept_redirects=False)
-
-    mc = aiomcache.Client(options.memcached_host, options.memcached_port, loop=loop)
-    app['mc'] = mc
-    session_setup(app, MemcachedStorage(mc))
-
-    async def session_test(request):
-        session = await get_session(request)
-        last_visit = session['last_visit'] if 'last_visit' in session else None
-        session['last_visit'] = time.time()
-        text = 'Last visited: {}'.format(last_visit)
-        return web.Response(text=text)
-    app.router.add_get('/session_test', session_test)
 
     main_app = web.Application()
 
@@ -144,7 +129,6 @@ async def run_app(options=None):
     main_app.add_subapp('/riego/', app)
 
     logging.getLogger(__name__).info("Start")
-
 
     return main_app
 
