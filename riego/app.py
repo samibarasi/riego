@@ -4,6 +4,7 @@ import pkg_resources
 import os
 from pathlib import Path
 import socket
+import time
 
 import logging
 from logging.handlers import RotatingFileHandler
@@ -25,6 +26,11 @@ from aiohttp import web
 import jinja2
 import aiohttp_jinja2
 import aiohttp_debugtoolbar
+from aiohttp_remotes import setup as setup_remotes, XForwardedRelaxed
+
+import aiomcache
+from aiohttp_session import setup as session_setup, get_session
+from aiohttp_session.memcached_storage import MemcachedStorage
 
 
 from riego import __version__
@@ -36,7 +42,6 @@ async def on_startup(app):
         asyncio.get_event_loop().set_debug(True)
 
 
-
 async def on_shutdown(app):
     logging.getLogger(__name__).debug("on_shutdown")
 
@@ -45,7 +50,7 @@ async def on_cleanup(app):
     logging.getLogger(__name__).debug("on_cleanup")
 
 
-def main():
+async def makeapp(loop):
     options = _get_options()
 
     _setup_logging(options=options)
@@ -105,6 +110,18 @@ def main():
         aiohttp_debugtoolbar.setup(
             app, check_host=False, intercept_redirects=False)
 
+    mc = aiomcache.Client(options.memcached_host,
+                          options.memcached_port, loop=loop)
+    session_setup(app, MemcachedStorage(mc))
+
+    async def session_test(request):
+        session = await get_session(request)
+        last_visit = session['last_visit'] if 'last_visit' in session else None
+        session['last_visit'] = time.time()
+        text = 'Last visited: {}'.format(last_visit)
+        return web.Response(text=text)
+    app.router.add_get('/session_test', session_test)
+
     main_app = web.Application()
 
     async def main_app_handler(request):
@@ -115,9 +132,19 @@ def main():
 
     logging.getLogger(__name__).info("Start")
 
-    web.run_app(main_app,
-                host=options.http_server_bind_address,
-                port=options.http_server_bind_port)
+#    async def tt(app):
+#        await setup_remotes(app, XForwardedRelaxed())
+#    main_app.on_startup.append(tt)
+    return main_app
+
+
+def main():
+    loop = asyncio.get_event_loop()
+    main_app = loop.run_until_complete(makeapp(loop))
+
+    web.run_app(main_app, host="0.0.0.0", port=8080)
+#                host=options.http_server_bind_address,
+#                port=options.http_server_bind_port)
 
 
 def _setup_logging(options=None):
@@ -168,10 +195,15 @@ def _get_options():
     p.add('--log_backup_count', help='How many files to rotate',
           default=3, type=int)
 # Redis
-    p.add('--redis_host', help='IP adress of mqtt host',
+    p.add('--redis_host', help='IP adress of redis host',
           default='127.0.0.1')
-    p.add('--redis_port', help='Port of mqtt service',
+    p.add('--redis_port', help='Port of redis service',
           default=6379, type=int)
+# Memcache
+    p.add('--memcached_host', help='IP adress of memcached host',
+          default='127.0.0.1')
+    p.add('--memcached_port', help='Port of memcached service',
+          default=11211, type=int)
 # HTTP-Server
     p.add('--http_server_bind_address',
           help='http-server bind address', default='0.0.0.0')
@@ -243,5 +275,3 @@ def _get_options():
         print(p.format_values())
 
     return options
-
-

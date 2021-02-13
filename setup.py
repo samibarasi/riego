@@ -25,7 +25,7 @@ setuptools.setup(
         'uvloop; sys_platform == "linux"',
         'cchardet',
         'aiohttp_debugtoolbar',
-        'aiohttp_session[secure]',
+        'aiohttp_session[aiomcache]',
         'aiohttp_remotes',
         'aiosmtplib',
     ],
