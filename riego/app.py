@@ -92,7 +92,7 @@ async def run_app(options=None):
     app.on_cleanup.append(on_cleanup)
 
     app['version'] = __version__
-    app['options'] = options
+    #app['options'] = options
 
     websockets = setup_websockets(app=app, options=options)
     db = setup_db(options=options)
@@ -113,8 +113,8 @@ async def run_app(options=None):
 
     await setup_remotes(app, XForwardedRelaxed())
     setup_http_sessions(app=app, options=options)
-    setup_routes(app)
-    setup_error_pages(app)
+    setup_routes(app=app, options=options)
+    setup_error_pages(app=app)
 
     if options.enable_aiohttp_debug_toolbar:
         aiohttp_debugtoolbar.setup(
