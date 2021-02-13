@@ -5,6 +5,7 @@ import os
 import sys
 from pathlib import Path
 import socket
+import secrets
 
 
 import logging
@@ -32,6 +33,8 @@ from aiohttp_remotes import setup as setup_remotes, XForwardedRelaxed
 
 
 from riego import __version__
+
+PRIMARY_INI_FILE = 'riego.conf'
 
 
 async def on_startup(app):
@@ -69,22 +72,6 @@ async def run_app(options=None):
     if options.enable_asyncio_debug:
         loop.set_debug(True)
 
-    try:
-        with open('riego.conf', 'xt') as f:
-            for item in vars(options):
-                f.write(f'# {item}={getattr(options, item)}\n')
-    except IOError:
-        pass
-
-    if options.defaults:
-        for item in vars(options):
-            print(f'# {item}={getattr(options, item)}')
-        exit(0)
-
-    if options.version:
-        print('Version: ', __version__)
-        exit(0)
-
     app = web.Application()
 
     app.on_startup.append(on_startup)
@@ -92,7 +79,7 @@ async def run_app(options=None):
     app.on_cleanup.append(on_cleanup)
 
     app['version'] = __version__
-    #app['options'] = options
+    app['options'] = options
 
     websockets = setup_websockets(app=app, options=options)
     db = setup_db(options=options)
@@ -120,16 +107,16 @@ async def run_app(options=None):
         aiohttp_debugtoolbar.setup(
             app, check_host=False, intercept_redirects=False)
 
+# Put app as subapp under main_app and create an approbiate redirection
     main_app = web.Application()
 
     async def main_app_handler(request):
-        raise web.HTTPSeeOther('/riego/')
+        raise web.HTTPSeeOther(f'/{options.cloud_identifier}/')
 
     main_app.router.add_get('/', main_app_handler)
-    main_app.add_subapp('/riego/', app)
+    main_app.add_subapp(f'/{options.cloud_identifier}/', app)
 
-    logging.getLogger(__name__).info("Start")
-
+    logging.getLogger(__name__).info(f'Start {options.cloud_identifier}')
     return main_app
 
 
@@ -163,8 +150,11 @@ def _setup_logging(options=None):
 
 def _get_options():
     p = configargparse.ArgParser(
-        default_config_files=['/etc/riego/conf.d/*.conf', '~/.riego.conf',
-                              'riego.conf'])
+        default_config_files=['/etc/riego/conf.d/*.conf',
+                              '~/.riego.conf',
+                              PRIMARY_INI_FILE],
+        args_for_writing_out_config_file=['-w',
+                                          '--write-out-config-file'])
     p.add('-c', '--config', is_config_file=True, env_var='RIEGO_CONF',
           required=False, help='config file path')
 # Database
@@ -180,11 +170,8 @@ def _get_options():
           default=1024*300, type=int)
     p.add('--log_backup_count', help='How many files to rotate',
           default=3, type=int)
-# Redis
-    p.add('--redis_host', help='IP adress of redis host',
-          default='127.0.0.1')
-    p.add('--redis_port', help='Port of redis service',
-          default=6379, type=int)
+# Secrests
+    p.add('--cloud_identifier', help='Unique id for Cloud Identity')
 # Memcache
     p.add('--memcached_host', help='IP adress of memcached host',
           default='127.0.0.1')
@@ -261,5 +248,31 @@ def _get_options():
     options = p.parse_args()
     if options.verbose:
         print(p.format_values())
+
+    try:
+        with open(PRIMARY_INI_FILE, 'xt') as f:
+            for item in vars(options):
+                f.write(f'# {item}={getattr(options, item)}\n')
+    except IOError:
+        pass
+
+    if options.defaults:
+        for item in vars(options):
+            print(f'# {item}={getattr(options, item)}')
+        exit(0)
+
+    if options.version:
+        print('Version: ', __version__)
+        exit(0)
+
+# Create cloud_identifier if not exist and save to ini.file
+    if options.cloud_identifier is None:
+        options.cloud_identifier = secrets.token_urlsafe(12)
+        try:
+            with open(PRIMARY_INI_FILE, 'at') as f:
+                f.write(f'\ncloud_identifier = {options.cloud_identifier}\n')
+        except IOError as e:
+            print(f'Unable to write cloud_identifier to config file: {e}')
+            exit(1)
 
     return options
