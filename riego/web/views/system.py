@@ -17,22 +17,16 @@ def setup_routes_system(app):
     app.add_routes(router)
 
 
+@aiohttp_jinja2.template('system/index.html')
 @router.get("/system", name='system')
 async def system_index(request):
-#    installed_version = await _check_installed()
-#    if not packaging.version.parse(installed_version) == packaging.version.parse(__version__):  # noqa: E501
-#        text = '''Diese Riego Instanz läuft in der Version {}
-#                und entspricht nicht der installierten Version {}.'''  # noqa: E501
-#        text = text.format(__version__, installed_version)
- 
-    text = "TEST"
-    context = {'text': text}
-    response = aiohttp_jinja2.render_template('system/index.html',
-                                              request,
-                                              context)
-    response.set_cookie('name', 'value', max_age=60)
-    response.set_cookie('name2', 'value2', samesite="strict")
-    return response
+    text = ''
+    installed_version = await _check_installed()
+    if not packaging.version.parse(installed_version) == packaging.version.parse(__version__):  # noqa: E501
+        text = '''Diese Riego Instanz läuft in der Version {}
+                und entspricht nicht der installierten Version {}.'''  # noqa: E501
+        text = text.format(__version__, installed_version)
+    return {"text": text}
 
 
 @router.get("/system/check_update", name='system_check_update')
