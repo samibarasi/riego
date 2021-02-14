@@ -32,7 +32,6 @@ async def new(request: web.Request) -> Dict[str, Any]:
 
 
 @router.post("/valves/new")
-@aiohttp_jinja2.template("valves/edit.html")
 async def new_apply(request: web.Request) -> Dict[str, Any]:
     item = await request.post()
     try:

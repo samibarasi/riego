@@ -34,7 +34,6 @@ async def new(request: web.Request) -> Dict[str, Any]:
 
 
 @router.post("/boxes/new")
-@aiohttp_jinja2.template("boxes/edit.html")
 async def new_apply(request: web.Request) -> Dict[str, Any]:
     item = await request.post()
     try:
@@ -88,7 +87,7 @@ async def edit_apply(request: web.Request) -> web.Response:
         with get_db().conn:
             get_db().conn.execute(
                 ''' UPDATE boxes
-                    SET _name = ?, remark = ?
+                    SET name = ?, remark = ?
                     WHERE id = ? ''',
                 (item['name'], item['remark'], item_id))
     except IntegrityError as e:

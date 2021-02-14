@@ -17,8 +17,8 @@ def setup_routes_system(app):
     app.add_routes(router)
 
 
-@aiohttp_jinja2.template('system/index.html')
 @router.get("/system", name='system')
+@aiohttp_jinja2.template('system/index.html')
 async def system_index(request):
     text = ''
     installed_version = await _check_installed()
