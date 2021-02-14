@@ -2,12 +2,38 @@ vorbereitungen unter debian
 
 
  ./reboot-to-writable-mode.sh
-apt install python3-pip python3-venv
+apt install python3-pip python3-venv memcached
+
+
+MQTT-Broker Mosquitto
+
+wget -O - http://repo.mosquitto.org/debian/mosquitto-repo.gpg.key | apt-key add -
+
+wget -O /etc/apt/sources.list.d/mosquitto-buster.list http://repo.mosquitto.org/debian/mosquitto-buster.list
+
+sudo apt update 
+sudo apt install -y mosquitto mosquitto-clients avahi-daemon
+
+sudo bash -c "cat > /etc/mosquitto/mosquitto.conf" <<'EOT'
+pid_file /var/run/mosquitto.pid
+persistence true
+persistence_location /mnt/usb1/mosquitto/
+log_dest syslog
+persistent_client_expiration 2m
+include_dir /etc/mosquitto/conf.d
+EOT
+
+cp -a /var/lib/mosquitto /mnt/usb1/
+
+sudo systemctl enable mosquitto.service
+sudo systemctl restart mosquitto.service
 
 adduser --system --group --home /mnt/usb1/riego riego
 chown riego.riego /mnt/usb1/riego
 chmod 2775 /mnt/usb1/riego
 adduser stephan riego
+
+
 
 
 cd /mnt/usb1/riego
