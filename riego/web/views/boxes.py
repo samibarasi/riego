@@ -20,9 +20,9 @@ def setup_routes_boxes(app):
 @router.get("/boxes", name='boxes')
 @aiohttp_jinja2.template("boxes/index.html")
 async def index(request: web.Request) -> Dict[str, Any]:
-    c = get_db().conn.cursor()
-    c.execute('SELECT * FROM boxes')
-    items = c.fetchall()
+    cursor = get_db().conn.cursor()
+    cursor.execute('SELECT * FROM boxes')
+    items = cursor.fetchall()
     get_db().conn.commit()
     return {"items": items}
 

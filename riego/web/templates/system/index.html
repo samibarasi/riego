@@ -13,6 +13,12 @@
     {{text}}
   </pre>
 
+  <p>
+    {% if user is not none %}
+    Angemeldet als: {{user['identity']}}
+    {% endif %}
+  </p>
+
 </div>
 
 

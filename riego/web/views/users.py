@@ -1,10 +1,14 @@
 from typing import Any, Dict
 import aiohttp_jinja2
 from aiohttp import web
+from aiohttp_session import get_session
 
 from sqlite3 import IntegrityError
 from riego.db import get_db
-
+from riego.web.users import User
+import secrets
+import bcrypt
+import asyncio
 
 from logging import getLogger
 _log = getLogger(__name__)
@@ -16,12 +20,101 @@ def setup_routes_users(app):
     app.add_routes(router)
 
 
+@router.get("/login", name='login')
+@aiohttp_jinja2.template("users/login.html")
+async def login(request: web.Request) -> Dict[str, Any]:
+    redirect = request.rel_url.query.get("redirect", "")
+    csrf_token = secrets.token_urlsafe()
+    session = await get_session(request)
+    session['csrf_token'] = csrf_token
+    return {'csrf_token': csrf_token, 'redirect': redirect}
+
+
+@router.post("/login")
+async def login_apply(request: web.Request) -> Dict[str, Any]:
+    form = await request.post()
+    session = await get_session(request)
+    if session.get('csrf_token') != form['csrf_token']:
+        await asyncio.sleep(2)
+        raise web.HTTPUnauthorized()
+
+    if form.get('identity') is None:
+        await asyncio.sleep(2)
+        raise web.HTTPSeeOther(request.app.router['login'].url_for())
+
+    cursor = get_db().conn.cursor()
+    cursor.execute('SELECT * FROM users WHERE identity = ?',
+                   (form['identity'],))
+    user = cursor.fetchone()
+    get_db().conn.commit()
+
+    if user is None or user['is_disabled']:
+        await asyncio.sleep(2)
+        raise web.HTTPSeeOther(request.app.router['login'].url_for())
+    if not bcrypt.checkpw(form['password'].encode('utf8'), user['password']):
+        await asyncio.sleep(2)
+        raise web.HTTPSeeOther(request.app.router['login'].url_for())
+
+    session['user_id'] = user['id']
+    session['is_full_auth'] = True
+
+    location = form.get('redirect')
+    if location is None or location == '':
+        location = request.app.router['dashboard_index'].url_for()
+    response = web.HTTPSeeOther(location=location)
+    if form.get('remember_me') is not None:
+        remember_me = secrets.token_urlsafe(32)
+        try:
+            with get_db().conn:
+                get_db().conn.execute(
+                    ''' UPDATE users
+                    SET remember_me = ?
+                    WHERE id = ? ''',
+                    (remember_me, user['id']))
+        except IntegrityError:
+            pass
+        response.set_cookie("remember_me", remember_me,
+                            max_age=7776000,
+                            httponly=True,
+                            samesite='strict')
+    return response
+
+
+@router.get("/logout", name='logout')
+async def logout(request: web.Request) -> Dict[str, Any]:
+    session = await get_session(request)
+    session.pop('user_id', None)
+    session.pop('is_remembered', None)
+    session.pop('is_full_auth', None)
+    response = web.HTTPSeeOther(request.app.router['login'].url_for())
+    response.set_cookie('remember_me', '',
+                        expires='Thu, 01 Jan 1970 00:00:00 GMT')
+    return response
+
+
+@router.get("/passwd", name='passwd')
+@aiohttp_jinja2.template("users/passwd.html")
+async def passwd(request: web.Request) -> Dict[str, Any]:
+    return {}
+
+
+@router.post("/passwd")
+async def passwd_apply(request: web.Request) -> Dict[str, Any]:
+    item = await request.post()
+    user = User(request=request, db=get_db())
+    if await user.passwd(item['new_password_1']):
+        raise web.HTTPSeeOther(request.app.router['dashboard_index'].url_for())
+    else:
+        raise web.HTTPSeeOther(request.app.router['passwd'].url_for())
+    return {}  # not reached
+
+
 @router.get("/users", name='users')
 @aiohttp_jinja2.template("users/index.html")
 async def index(request: web.Request) -> Dict[str, Any]:
-    c = get_db().conn.cursor()
-    c.execute('SELECT * FROM users')
-    items = c.fetchall()
+    cursor = get_db().conn.cursor()
+    cursor.execute('SELECT * FROM users')
+    items = cursor.fetchall()
     get_db().conn.commit()
     return {"items": items}
 
