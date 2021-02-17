@@ -23,6 +23,7 @@ from riego.web.websockets import setup_websockets
 from riego.web.routes import setup_routes
 from riego.web.error_pages import setup_error_pages
 from riego.web.http_sessions import setup_http_sessions
+from riego.web.security import current_user_ctx_processor
 
 
 from aiohttp import web
@@ -91,15 +92,16 @@ async def run_app(options=None):
     setup_timer(app=app, options=options, db=db,
                 mqtt=mqtt, valves=valves, parameters=parameters)
 
+    setup_http_sessions(app=app, options=options)
+
     loader = jinja2.FileSystemLoader(options.http_server_template_dir)
     aiohttp_jinja2.setup(app,
                          loader=loader,
                          # enable_async=True,
-                         # context_processors=[alert_ctx_processor],
+                         context_processors=[current_user_ctx_processor],
                          )
 
     await setup_remotes(app, XForwardedRelaxed())
-    setup_http_sessions(app=app, options=options)
     setup_routes(app=app, options=options)
     setup_error_pages(app=app)
 
@@ -170,8 +172,10 @@ def _get_options():
           default=1024*300, type=int)
     p.add('--log_backup_count', help='How many files to rotate',
           default=3, type=int)
-# Secrests
+# Secrets & Scurity
     p.add('--cloud_identifier', help='Unique id for Cloud Identity')
+    p.add('--max_age_remember_me', type=int, default=7776000)
+    p.add('--reset_admin', help='Reset admin-pw to given value an exit')
 # Memcache
     p.add('--memcached_host', help='IP adress of memcached host',
           default='127.0.0.1')
@@ -265,6 +269,10 @@ def _get_options():
         print('Version: ', __version__)
         exit(0)
 
+    if options.reset_admin:
+        _reset_admin(options)
+        exit(0)
+
 # Create cloud_identifier if not exist and save to ini.file
     if options.cloud_identifier is None:
         options.cloud_identifier = secrets.token_urlsafe(12)
@@ -276,3 +284,26 @@ def _get_options():
             exit(1)
 
     return options
+
+
+def _reset_admin(options):
+    from riego.web.security import password_hash
+    from sqlite3 import IntegrityError
+    from riego.db import setup_db
+
+    db = setup_db(options=options)
+    password = options.reset_admin
+
+    if len(password) > 0:
+        password = password_hash(password.encode('utf-8'))
+        try:
+            with db.conn:
+                db.conn.execute(
+                    '''UPDATE users
+                        SET password = ?
+                        WHERE id = ? ''', (password, 1))
+        except IntegrityError as e:
+            print(f'Unable to reset Admin PW: {e}')
+        else:
+            print(f'Succesfully reset Admin PW: {password}')
+    db.conn.close()

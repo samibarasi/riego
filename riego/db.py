@@ -48,9 +48,9 @@ class Db:
             if self.conn is not None:
                 self.conn.close()
             exit(1)
-
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.conn.row_factory = sqlite3.Row
+
         self.conn.create_function("db_to_websocket", 2, self._db_to_websocket)
         self.conn.execute("DROP TRIGGER IF EXISTS t_valves_update")
         self.conn.execute("""CREATE TRIGGER t_valves_update
@@ -72,8 +72,6 @@ class Db:
         self.conn.execute("""CREATE TRIGGER t_boxes_update
                 AFTER UPDATE ON boxes
                 BEGIN SELECT db_to_websocket('boxes', 'reload'); END""")
-
-
 
     def _do_migrations(self, options):
         try:

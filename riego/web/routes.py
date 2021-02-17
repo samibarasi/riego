@@ -12,7 +12,7 @@ def setup_routes(app=None, options=None):
     dashboard = Dashboard(app)
 
     routes = [
-        ('GET', '/',   dashboard.index,      'dashboard_index'),
+        ('GET', '/',   dashboard.index,      'home'),
     ]
 
     for route in routes:

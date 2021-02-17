@@ -2,8 +2,6 @@ import aiohttp_jinja2
 from aiohttp import web
 
 from riego.model.parameters import get_parameters
-from riego.db import get_db
-from riego.web.users import User
 
 import asyncio
 import sys
@@ -29,8 +27,7 @@ async def system_index(request):
                 und entspricht nicht der installierten Version {}.'''  # noqa: E501
         text = text.format(__version__, installed_version)
 
-    user = await User(request=request, db=get_db()).get_user()
-    return {"text": text, 'user': user}
+    return {"text": text}
 
 
 @router.get("/system/check_update", name='system_check_update')
