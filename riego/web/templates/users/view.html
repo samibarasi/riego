@@ -7,8 +7,11 @@
 {% block content %}
 <h1>{{ item['identity'] }}</h1>
 <ul>
+    <li>id: {{item['id']}}</li>
+    <li>identity: {{item['identity']}}</li>
 	<li>password: {{item['password']}}</li>
-	<li>permissions: {{item['permissions']}}</li>
+    <li>full_name: {{item['full_name']}}</li>
+    <li>email: {{item['email']}}</li>
 	<li>is_superuser: {{item['is_superuser']}}</li>
 	<li>is_disabled: {{item['is_disabled']}}</li>
 	<li>remember_me: {{item['remember_me']}}</li>

@@ -25,8 +25,7 @@ steps = [
 	"ip_address"	    VARCHAR,
 	"created_at"	    timestamp DEFAULT CURRENT_TIMESTAMP,
 	CONSTRAINT "topic_uc" UNIQUE("topic"),
-    PRIMARY KEY("id"))'''
-    ),(
+    PRIMARY KEY("id"))''',
     '''DROP TABLE "boxes" '''
     ),
     step(
@@ -36,8 +35,7 @@ steps = [
 	"water_amount"	INTEGER,
 	"valve_id"	    INTEGER NOT NULL REFERENCES "valves"("id") ON DELETE CASCADE,
 	"created_at"	timestamp DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY("id"))'''
-    ),(
+    PRIMARY KEY("id"))''',
     '''DROP TABLE "events" '''
     ),
     step(
@@ -47,8 +45,7 @@ steps = [
 	"value"	        VARCHAR,
 	"created_at"	timestamp DEFAULT CURRENT_TIMESTAMP,
 	CONSTRAINT "key_uc" UNIQUE("key"),
-    PRIMARY KEY("id"))'''
-    ),(
+    PRIMARY KEY("id"))''',
      '''DROP TABLE "parameters" '''
     ),
     step(
@@ -68,8 +65,7 @@ steps = [
 	"box_id"	    INTEGER NOT NULL REFERENCES "boxes"("id") ON DELETE CASCADE,
 	"created_at"	timestamp DEFAULT CURRENT_TIMESTAMP,
 	CONSTRAINT "channel_nr_box_id_uc" UNIQUE("channel_nr","box_id"),
-    PRIMARY KEY("id"))'''
-    ),(
+    PRIMARY KEY("id"))''',
     '''DROP TABLE "valves" '''
     )
 ]

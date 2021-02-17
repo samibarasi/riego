@@ -15,7 +15,7 @@
 
   <p>
     {% if user is not none %}
-    Angemeldet als: {{user['identity']}}
+    Mittels {{user['provider']}} angemeldet als: {{user['identity']}}
     {% endif %}
   </p>
 

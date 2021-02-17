@@ -1,11 +1,12 @@
 from typing import Any, Dict
 import aiohttp_jinja2
 from aiohttp import web
-from aiohttp_session import get_session
+from aiohttp_session import get_session, new_session
 
 from sqlite3 import IntegrityError
 from riego.db import get_db
-from riego.web.security import get_user, password_check, password_hash
+from riego.web.security import (get_user, password_check,
+                                password_hash, delete_websocket_auth)
 import secrets
 import asyncio
 
@@ -51,8 +52,8 @@ async def login_apply(request: web.Request) -> Dict[str, Any]:
     if user is None or user['is_disabled']:
         await asyncio.sleep(2)
         raise web.HTTPSeeOther(request.app.router['login'].url_for())
-#    if not bcrypt.checkpw(form['password'].encode('utf8'), user['password']):
-    if not password_check(form['password'].encode('utf8'), user['password']): 
+#    if not bcrypt.checkpw(form['password'].encode('utf-8'), user['password']):
+    if not password_check(form['password'].encode('utf-8'), user['password']):
         await asyncio.sleep(2)
         raise web.HTTPSeeOther(request.app.router['login'].url_for())
 
@@ -62,7 +63,7 @@ async def login_apply(request: web.Request) -> Dict[str, Any]:
     if location is None or location == '':
         location = request.app.router['home'].url_for()
     response = web.HTTPSeeOther(location=location)
-
+# TODO use create_remember_me_auth from modul security
     if form.get('remember_me') is not None:
         remember_me = secrets.token_urlsafe()
         try:
@@ -83,16 +84,23 @@ async def login_apply(request: web.Request) -> Dict[str, Any]:
 
 @router.get("/logout", name='logout')
 async def logout(request: web.Request) -> Dict[str, Any]:
-    session = await get_session(request)
-    user_id = session.get('user_id')
+    user = await get_user(request)
+    if user is not None:
+        await delete_websocket_auth(request, user=user)
+
+# TODO use delete_remember_me_auth from modul security
     try:
         with get_db().conn:
             get_db().conn.execute("""UPDATE users
                                      SET remember_me = ''
-                                     WHERE id = ?""", (user_id,))
+                                     WHERE id = ?""", (user['id'],))
     except IntegrityError:
         pass
-    session.pop('user_id', None)
+
+    session = await get_session(request)
+    
+    if session is not None:
+        session.pop('user_id', None)
     response = web.HTTPSeeOther(request.app.router['login'].url_for())
 #    response.set_cookie('remember_me', None,
 #                        expires='Thu, 01 Jan 1970 00:00:00 GMT')

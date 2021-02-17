@@ -1,6 +1,8 @@
 from aiohttp import web
 import json
 import asyncio
+import bcrypt
+
 from logging import getLogger
 _log = getLogger(__name__)
 
@@ -13,21 +15,22 @@ def get_websockets():
     return _instance
 
 
-def setup_websockets(app=None, options=None):
+def setup_websockets(app=None, db=None, options=None):
     global _instance
     if _instance is not None:
         del _instance
-    _instance = Websockets(app=app, options=options)
+    _instance = Websockets(app=app, db=db, options=options)
     return _instance
 
 
 class Websockets():
-    def __init__(self, app=None, options=None):
+    def __init__(self, app=None, db=None, options=None):
         global _instance
         if _instance is None:
             _instance = self
 
         self._options = options
+        self._db = db
 
         self._ws_list = []
         self._subscriptions = {}
@@ -43,7 +46,7 @@ class Websockets():
         return None
 
     def subscribe(self, scope: str, callback: callable) -> None:
-        """Install a callback function for given model.
+        """Install a callback function for given scope.
 
         :param scope: name of scope that asks for websocket
         :type scope: str
@@ -56,42 +59,71 @@ class Websockets():
         return None
 
     async def _ws_handler(self, request) -> web.WebSocketResponse:
-        ws = web.WebSocketResponse()
+        max_msg_size = self._options.websockets_max_receive_size
+        ws = web.WebSocketResponse(max_msg_size=max_msg_size)
         await ws.prepare(request)
 
         self._ws_list.append(ws)
-
-    # Here possiblity to send init-message to Web-Client
 
         try:
             async for msg in ws:
                 _log.debug(msg)
                 if msg.type == web.WSMsgType.TEXT:
-                    msg = json.loads(msg.data)
-                    await self._dispatch_message(msg)
+                    await self._dispatch_message(msg.data)
                 else:
                     break
         except Exception as e:
-            _log.error(f'websocket.py, exeption {e}')
+            _log.error(f'Exeption in _dispatch_message: {e}')
         finally:
-            _log.debug(f'Finally ws remove: {ws}')
+            _log.debug(f'Removing closed websocket: {ws}')
             self._ws_list.remove(ws)
         return ws
 
     async def _dispatch_message(self, msg: dict) -> bool:
-        model = msg.get('scope', None)
-        if model is None:
+        msg = json.loads(msg)
+        scope = msg.get('scope', '')
+        if scope == "authenticate_v1":
+            # TODO Implemet a one-time authentication
+            return True
+
+        if len(scope) == 0:
             _log.error(f'Message not for a scope: {msg}')
+            await asyncio.sleep(3)
             return False
-        callback_func = self._subscriptions.get(model, None)
+
+        token = msg.get('token', '')
+        sequence = msg.get('sequence', '')
+
+        if len(sequence) == 0 or len(token) == 0:
+            _log.error(f"Websocket-Auth: missing var {sequence},{token}")
+            await asyncio.sleep(3)
+            return False
+
+        cursor = self._db.conn.cursor()
+        cursor.execute('''SELECT * FROM users_tokens
+                    WHERE sequence = ?''', (sequence,))
+        item = cursor.fetchone()
+        if item is None:
+            await asyncio.sleep(3)
+            return False
+
+        token = token.encode('utf-8')
+        if bcrypt.checkpw(token, item['hash']):
+            _log.debug(f'authenticate: {token}, sequence: {sequence}')
+        else:
+            _log.error(f'no authenticate: {token}, sequence: {sequence}')
+            await asyncio.sleep(3)
+            return False
+
+        callback_func = self._subscriptions.get(scope, None)
         if callback_func is None:
             _log.error(f'Message for an unknown scope: {msg}')
+            await asyncio.sleep(3)
             return False
         try:
             await callback_func(msg)
         except Exception as e:
-            _log.error(
-                f'websocket.py, exeption {e} in callable {callback_func}')
+            _log.error(f'Exeption in {callback_func}: {e}')
             return False
         return True
 

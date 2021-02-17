@@ -20,15 +20,25 @@
     </div>
     <fieldset id="valves_{{valve['id']}}_fieldset_1" disabled>
     <label for="valves_{{valve['id']}}_duration" class="form-label">Dauer: <span>{{valve['duration']}}</span> Minuten</label>
-    <input type="range" class="form-range" min="0" max="90" id="valves_{{valve['id']}}_duration" autocomplete="off"
-        value="{{valve['duration']}}"
-        onchange="ws.send(JSON.stringify({action: 'update', scope: 'valves', id: '{{valve['id']}}', key: 'duration', value: this.value } ));this.blur();"
+    <input type="range" class="form-range" min="0" max="90" id="valves_{{valve['id']}}_duration" autocomplete="off" value="{{valve['duration']}}"
+        onchange="ws.send(JSON.stringify({action: 'update',
+                                          scope: 'valves',
+                                          id: '{{valve['id']}}',
+                                          token: '{{websocket_auth['token']}}',
+                                          sequence: '{{websocket_auth['sequence']}}',
+                                          key: 'duration',
+                                          value: this.value }));this.blur();"
         oninput="this.previousElementSibling.children[0].innerHTML = this.value;">
 
     <label for="valves_{{valve['id']}}_interval" class="form-label">Intervall: <span>{{valve['interval']}}</span> Tage</label>
-    <input type="range" class="form-range" min="0" max="10" id="valves_{{valve['id']}}_interval" autocomplete="off"
-        value="{{valve['interval']}}"
-        onchange="ws.send(JSON.stringify({action: 'update', scope: 'valves', id: '{{valve['id']}}', key: 'interval', value: this.value } ));this.blur();"
+    <input type="range" class="form-range" min="0" max="10" id="valves_{{valve['id']}}_interval" autocomplete="off" value="{{valve['interval']}}"
+        onchange="ws.send(JSON.stringify({action: 'update',
+                                          scope: 'valves',
+                                          id: '{{valve['id']}}',
+                                          token: '{{websocket_auth['token']}}',
+                                          sequence: '{{websocket_auth['sequence']}}',
+                                          key: 'interval',
+                                          value: this.value } ));this.blur();"
         oninput="this.previousElementSibling.children[0].innerHTML = this.value ;">
     </fieldset>
 
@@ -36,14 +46,26 @@
         <div class="col form-check form-switch">
             <input class="form-check-input" type="checkbox" id="valves_{{valve['id']}}_is_running" autocomplete="off" 
             {% if valve['is_running'] == 1 %} checked {% endif %}
-                onchange="ws.send(JSON.stringify({action: 'update', scope: 'valves', id: '{{ valve['id'] }}', key: 'is_running', value: this.checked } ))">
+                onchange="ws.send(JSON.stringify({action: 'update',
+                                                  scope: 'valves',
+                                                  id: '{{ valve['id'] }}',
+                                                  token: '{{websocket_auth['token']}}',
+                                                  sequence: '{{websocket_auth['sequence']}}',
+                                                  key: 'is_running',
+                                                  value: this.checked } ))">
             <label class="form-check-label" for="valves_{{valve['id']}}_is_running">An/Aus</label>
         </div>
 
         <div class="col form-check">
             <input class="form-check-input" type="checkbox" id="valves_{{valve['id']}}_is_enabled" autocomplete="off"
                 {% if valve['is_enabled'] == 1 %} checked {% endif %}
-                onchange="ws.send(JSON.stringify({action: 'update', scope: 'valves', id: '{{valve['id'] }}', key: 'is_enabled', value: this.checked } ))">
+                onchange="ws.send(JSON.stringify({action: 'update',
+                                                  scope: 'valves',
+                                                  id: '{{valve['id'] }}',
+                                                  token: '{{websocket_auth['token']}}',
+                                                  sequence: '{{websocket_auth['sequence']}}',
+                                                  key: 'is_enabled',
+                                                  value: this.checked } ))">
             <label class="form-check-label" for="valves_{{valve['id']}}_is_enabled">Automatik</label>
         </div>
     </div>
@@ -94,10 +116,17 @@
             //reconnect now
             check();
         };
+        ws.onopen = function(){
+            ws.send(JSON.stringify({action: 'send_token',
+                                    scope: 'authenticate_v1',
+                                    token: '{{websocket_auth["token"]}}',
+                                    sequence: '{{websocket_auth["sequence"]}}'} ));
+        };
+
     };
     function check(){
         if(!ws || ws.readyState == 3) start();
-    }
+   }
     start();
     setInterval(check, 5000);
 

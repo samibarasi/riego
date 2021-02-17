@@ -82,9 +82,9 @@ async def run_app(options=None):
     app['version'] = __version__
     app['options'] = options
 
-    websockets = setup_websockets(app=app, options=options)
     db = setup_db(options=options)
-    parameters = setup_parameters(app=app, options=options, db=db)
+    websockets = setup_websockets(app=app, db=db, options=options)
+    parameters = setup_parameters(app=app, db=db, options=options)
     mqtt = setup_mqtt(app=app, options=options)
     setup_boxes(options=options, db=db, mqtt=mqtt)
     valves = setup_valves(options=options, db=db,
@@ -175,7 +175,15 @@ def _get_options():
 # Secrets & Scurity
     p.add('--cloud_identifier', help='Unique id for Cloud Identity')
     p.add('--max_age_remember_me', type=int, default=7776000)
+    p.add('--cookie_name_remember_me', default="remember_me")
     p.add('--reset_admin', help='Reset admin-pw to given value an exit')
+    p.add('--websockets_max_receive_size', type=int, default=1024 )
+# Session keys
+    p.add('--session_key_websocket_auth', default='websocket_auth')
+    # TODO
+    p.add('--session_key_user_id', default='user_id',
+          help='# TODO not used Yet')
+
 # Memcache
     p.add('--memcached_host', help='IP adress of memcached host',
           default='127.0.0.1')
