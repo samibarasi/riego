@@ -1,5 +1,5 @@
 from aiohttp_session import get_session
-from sqlite3 import IntegrityError
+from sqlite3 import IntegrityError, Row
 from riego.db import get_db
 from aiohttp import web
 import bcrypt
@@ -77,7 +77,17 @@ async def check_permission(request, permission=None):
     return None
 
 
-async def raise_permission(request, permission=None):
+async def raise_permission(request: web.BaseRequest, permission: str = None):
+    """Generate redirection to login form if permission is not
+    sufficent. Append query string with information for redirecting
+    after login to the original url.
+
+    :param request: [description]
+    :type request: web.Baserequest
+    :param permission: If no permission is given, check auth only
+    :type permission: str, optional
+    :raises web.HTTPSeeOther: [description]
+    """
     if await check_permission(request, permission=permission) is None:
         raise web.HTTPSeeOther(
             request.app.router['login'].url_for(
@@ -87,12 +97,25 @@ async def raise_permission(request, permission=None):
         )
 
 
-async def create_websocket_auth(request, user=None):
+async def create_websocket_auth(request: web.BaseRequest,
+                                user: Row = None) -> json:
+    """create token and sequence number if not exist in session. Than
+    a) put token and sequence into session for using in templates
+    b) put hashed token and sequence into database for later checking against
+       data recived with websocket.py
+
+    :param request: [description]
+    :type request: web.BaseRequest
+    :param user: [description], defaults to None
+    :type user: Row, optional
+    :return: [description]
+    :rtype: json
+    """
     if user is None:
         return None
-    session_key = request.app['options'].session_key_websocket_auth
     db = get_db()
     session = await get_session(request)
+    session_key = request.app['options'].session_key_websocket_auth
     websocket_auth = session.get(session_key, '')
     if len(websocket_auth) > 0:
         return websocket_auth
