@@ -5,11 +5,11 @@ from aiohttp_session import get_session, new_session
 
 from sqlite3 import IntegrityError
 from riego.db import get_db
-from riego.web.security import (raise_permission,
-                                get_user, password_check,
+from riego.web.security import (get_user, password_check,
                                 password_hash, delete_websocket_auth)
 import secrets
 import asyncio
+import time
 
 from logging import getLogger
 _log = getLogger(__name__)
@@ -26,12 +26,13 @@ def setup_routes_users(app):
 async def login(request: web.Request) -> Dict[str, Any]:
     redirect = request.rel_url.query.get("redirect", "")
     csrf_token = secrets.token_urlsafe()
+#    await new_session(request)
     session = await get_session(request)
     session['csrf_token'] = csrf_token
     return {'csrf_token': csrf_token, 'redirect': redirect}
 
 
-@router.post("/login")
+@ router.post("/login")
 async def login_apply(request: web.Request) -> Dict[str, Any]:
     form = await request.post()
     session = await get_session(request)
@@ -83,12 +84,11 @@ async def login_apply(request: web.Request) -> Dict[str, Any]:
     return response
 
 
-@router.get("/logout", name='logout')
+@ router.get("/logout", name='logout')
 async def logout(request: web.Request) -> Dict[str, Any]:
     user = await get_user(request)
     if user is not None:
         await delete_websocket_auth(request, user=user)
-
 # TODO use delete_remember_me_auth from modul security
     try:
         with get_db().conn:
@@ -97,9 +97,7 @@ async def logout(request: web.Request) -> Dict[str, Any]:
                                      WHERE id = ?""", (user['id'],))
     except IntegrityError:
         pass
-
     session = await get_session(request)
-    
     if session is not None:
         session.pop('user_id', None)
     response = web.HTTPSeeOther(request.app.router['login'].url_for())
@@ -109,13 +107,13 @@ async def logout(request: web.Request) -> Dict[str, Any]:
     return response
 
 
-@router.get("/passwd", name='passwd')
-@aiohttp_jinja2.template("users/passwd.html")
+@ router.get("/passwd", name='passwd')
+@ aiohttp_jinja2.template("users/passwd.html")
 async def passwd(request: web.Request) -> Dict[str, Any]:
     return {}
 
 
-@router.post("/passwd")
+@ router.post("/passwd")
 async def passwd_apply(request: web.Request) -> Dict[str, Any]:
     form = await request.post()
     user = await get_user(request)
@@ -137,10 +135,9 @@ async def passwd_apply(request: web.Request) -> Dict[str, Any]:
     return {}  # not reached
 
 
-@router.get("/users", name='users')
-@aiohttp_jinja2.template("users/index.html")
+@ router.get("/users", name='users')
+@ aiohttp_jinja2.template("users/index.html")
 async def index(request: web.Request) -> Dict[str, Any]:
-    await raise_permission(request, permission="superuser")
     cursor = get_db().conn.cursor()
     cursor.execute('SELECT * FROM users')
     items = cursor.fetchall()
@@ -148,16 +145,14 @@ async def index(request: web.Request) -> Dict[str, Any]:
     return {"items": items}
 
 
-@router.get("/users/new", name='users_new')
-@aiohttp_jinja2.template("users/new.html")
+@ router.get("/users/new", name='users_new')
+@ aiohttp_jinja2.template("users/new.html")
 async def new(request: web.Request) -> Dict[str, Any]:
-    await raise_permission(request, permission="superuser")
     return {}
 
 
-@router.post("/users/new")
+@ router.post("/users/new")
 async def new_apply(request: web.Request) -> Dict[str, Any]:
-    await raise_permission(request, permission="superuser")
     item = await request.post()
     try:
         with get_db().conn:
@@ -182,10 +177,9 @@ async def new_apply(request: web.Request) -> Dict[str, Any]:
     return {}  # not reached
 
 
-@router.get("/users/{item_id}", name='users_item_view')
-@aiohttp_jinja2.template("users/view.html")
+@ router.get("/users/{item_id}", name='users_item_view')
+@ aiohttp_jinja2.template("users/view.html")
 async def view(request: web.Request) -> Dict[str, Any]:
-    await raise_permission(request, permission="superuser")
     item_id = request.match_info["item_id"]
     cursor = get_db().conn.cursor()
     cursor.execute('SELECT * FROM users WHERE id=?', (item_id,))
@@ -196,10 +190,9 @@ async def view(request: web.Request) -> Dict[str, Any]:
     return {"item": item}
 
 
-@router.get("/users/{item_id}/edit", name='users_item_edit')
-@aiohttp_jinja2.template("users/edit.html")
+@ router.get("/users/{item_id}/edit", name='users_item_edit')
+@ aiohttp_jinja2.template("users/edit.html")
 async def edit(request: web.Request) -> Dict[str, Any]:
-    await raise_permission(request, permission="superuser")
     item_id = request.match_info["item_id"]
     cursor = get_db().conn.cursor()
     cursor.execute('SELECT * FROM users WHERE id=?', (item_id,))
@@ -210,9 +203,8 @@ async def edit(request: web.Request) -> Dict[str, Any]:
     return {"item": item}
 
 
-@router.post("/users/{item_id}/edit")
+@ router.post("/users/{item_id}/edit")
 async def edit_apply(request: web.Request) -> web.Response:
-    await raise_permission(request, permission="superuser")
     item_id = request.match_info["item_id"]
     item = await request.post()
     try:
@@ -239,9 +231,8 @@ async def edit_apply(request: web.Request) -> web.Response:
     return {}  # Not reached
 
 
-@router.get("/users/{item_id}/delete", name='users_item_delete')
+@ router.get("/users/{item_id}/delete", name='users_item_delete')
 async def delete(request: web.Request) -> web.Response:
-    await raise_permission(request, permission="superuser")
     item_id = request.match_info["item_id"]
     try:
         with get_db().conn:

@@ -18,7 +18,7 @@ async def current_user_ctx_processor(request):
     return {'user': user, 'websocket_auth': json.loads(websocket_auth)}
 
 
-async def get_user(request):
+async def get_user(request) -> Row:
     session = await get_session(request)
     db = get_db()
     user_id = session.get('user_id')
@@ -33,29 +33,18 @@ async def get_user(request):
             return None
         return user
 
-    remember_me = request.cookies.get('remember_me')
-    if remember_me is not None:
-        cursor = db.conn.cursor()
-        cursor.execute("""SELECT *, 'cookie' AS 'provider'
-                           FROM users
-                           WHERE remember_me = ?""", (remember_me,))
-        user = cursor.fetchone()
-        if user is None:
-            return None
-        if user['is_disabled']:
-            try:
-                with db.conn:
-                    db.conn.execute("""UPDATE users
-                                       SET remember_me = ''
-                                       WHERE id = ?""", (user['id'],))
-            except IntegrityError:
-                pass
-            return None
-        return user
-    return None
+    return await check_remember_me_auth(request)
 
 
-async def check_permission(request, permission=None):
+def password_hash(pw):
+    return bcrypt.hashpw(pw, bcrypt.gensalt(12))
+
+
+def password_check(pw, pw_hash):
+    return bcrypt.checkpw(pw, pw_hash)
+
+
+async def check_permission(request, permission=None) -> Row:
     user = await get_user(request)
     db = get_db()
     if user is None:
@@ -154,17 +143,58 @@ async def delete_websocket_auth(request, user=None):
     return None
 
 
-async def create_remember_me_auth(request, response=None, user=None):
-    pass
+async def create_remember_me_auth(request, response=None, user: Row = None):
+    remember_me = secrets.token_urlsafe()
+    try:
+        with get_db().conn:
+            get_db().conn.execute(
+                '''UPDATE users
+                    SET remember_me = ?
+                    WHERE id = ? ''',
+                (remember_me, user['id']))
+    except IntegrityError:
+        return None
+    response.set_cookie("remember_me", remember_me,
+                        max_age=request.app['options'].max_age_remember_me,
+                        httponly=True,
+                        samesite='strict')
+    return response
 
 
-async def delete_remember_me_auth(request, response=None, user=None):
-    pass
+async def delete_remember_me_auth(request, response=None, user: Row = None):
+    if user is not None:
+        try:
+            with get_db().conn:
+                get_db().conn.execute("""UPDATE users
+                                        SET remember_me = ''
+                                        WHERE id = ?""", (user['id'],))
+        except IntegrityError:
+            pass
+
+    session = await get_session(request)
+    session.pop('user_id', None)
+#    response.set_cookie('remember_me', None,
+#                        expires='Thu, 01 Jan 1970 00:00:00 GMT')
+    response.del_cookie('remember_me')
+    return response
 
 
-def password_hash(pw):
-    return bcrypt.hashpw(pw, bcrypt.gensalt(12))
-
-
-def password_check(pw, pw_hash):
-    return bcrypt.checkpw(pw, pw_hash)
+async def check_remember_me_auth(request) -> Row:
+    db = get_db()
+    user = None
+    remember_me = request.cookies.get('remember_me')
+    if remember_me is not None:
+        cursor = db.conn.cursor()
+        cursor.execute("""SELECT *, 'cookie' AS 'provider'
+                           FROM users
+                           WHERE remember_me = ?""", (remember_me,))
+        user = cursor.fetchone()
+        if user is not None and user['is_disabled']:
+            try:
+                with db.conn:
+                    db.conn.execute("""UPDATE users
+                                       SET remember_me = ''
+                                       WHERE id = ?""", (user['id'],))
+            except IntegrityError:
+                pass
+    return user
