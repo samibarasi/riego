@@ -4,6 +4,7 @@ from aiohttp import web
 
 from sqlite3 import IntegrityError
 from riego.db import get_db
+from riego.web.security import raise_permission
 
 from logging import getLogger
 _log = getLogger(__name__)
