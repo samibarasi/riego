@@ -5,7 +5,8 @@ from aiohttp_session import get_session, new_session
 
 from sqlite3 import IntegrityError
 from riego.db import get_db
-from riego.web.security import (get_user, password_check,
+from riego.web.security import (raise_permission,
+                                get_user, password_check,
                                 password_hash, delete_websocket_auth)
 import secrets
 import asyncio
@@ -139,6 +140,7 @@ async def passwd_apply(request: web.Request) -> Dict[str, Any]:
 @router.get("/users", name='users')
 @aiohttp_jinja2.template("users/index.html")
 async def index(request: web.Request) -> Dict[str, Any]:
+    await raise_permission(request, permission="superuser")
     cursor = get_db().conn.cursor()
     cursor.execute('SELECT * FROM users')
     items = cursor.fetchall()
@@ -149,11 +151,13 @@ async def index(request: web.Request) -> Dict[str, Any]:
 @router.get("/users/new", name='users_new')
 @aiohttp_jinja2.template("users/new.html")
 async def new(request: web.Request) -> Dict[str, Any]:
+    await raise_permission(request, permission="superuser")
     return {}
 
 
 @router.post("/users/new")
 async def new_apply(request: web.Request) -> Dict[str, Any]:
+    await raise_permission(request, permission="superuser")
     item = await request.post()
     try:
         with get_db().conn:
@@ -181,6 +185,7 @@ async def new_apply(request: web.Request) -> Dict[str, Any]:
 @router.get("/users/{item_id}", name='users_item_view')
 @aiohttp_jinja2.template("users/view.html")
 async def view(request: web.Request) -> Dict[str, Any]:
+    await raise_permission(request, permission="superuser")
     item_id = request.match_info["item_id"]
     cursor = get_db().conn.cursor()
     cursor.execute('SELECT * FROM users WHERE id=?', (item_id,))
@@ -194,6 +199,7 @@ async def view(request: web.Request) -> Dict[str, Any]:
 @router.get("/users/{item_id}/edit", name='users_item_edit')
 @aiohttp_jinja2.template("users/edit.html")
 async def edit(request: web.Request) -> Dict[str, Any]:
+    await raise_permission(request, permission="superuser")
     item_id = request.match_info["item_id"]
     cursor = get_db().conn.cursor()
     cursor.execute('SELECT * FROM users WHERE id=?', (item_id,))
@@ -206,6 +212,7 @@ async def edit(request: web.Request) -> Dict[str, Any]:
 
 @router.post("/users/{item_id}/edit")
 async def edit_apply(request: web.Request) -> web.Response:
+    await raise_permission(request, permission="superuser")
     item_id = request.match_info["item_id"]
     item = await request.post()
     try:
@@ -234,6 +241,7 @@ async def edit_apply(request: web.Request) -> web.Response:
 
 @router.get("/users/{item_id}/delete", name='users_item_delete')
 async def delete(request: web.Request) -> web.Response:
+    await raise_permission(request, permission="superuser")
     item_id = request.match_info["item_id"]
     try:
         with get_db().conn:

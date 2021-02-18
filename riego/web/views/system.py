@@ -2,6 +2,7 @@ import aiohttp_jinja2
 from aiohttp import web
 
 from riego.model.parameters import get_parameters
+from riego.web.security import raise_permission
 
 import asyncio
 import sys
@@ -20,6 +21,7 @@ def setup_routes_system(app):
 @router.get("/system", name='system')
 @aiohttp_jinja2.template('system/index.html')
 async def system_index(request):
+    await raise_permission(request, permission=None)
     text = ''
     installed_version = await _check_installed()
     if not packaging.version.parse(installed_version) == packaging.version.parse(__version__):  # noqa: E501
@@ -33,6 +35,7 @@ async def system_index(request):
 @router.get("/system/check_update", name='system_check_update')
 @aiohttp_jinja2.template('system/index.html')
 async def system_check_update(request):
+    await raise_permission(request, permission=None)
     update = await _check_update("No update")
     return {'text':  update}
 
@@ -40,6 +43,7 @@ async def system_check_update(request):
 @router.get("/system/do_update", name='system_do_update')
 @aiohttp_jinja2.template('system/index.html')
 async def system_do_update(request):
+    await raise_permission(request, permission=None)
     await _do_update()
     return {'text': "Restart erforderlich"}
 
@@ -47,6 +51,7 @@ async def system_do_update(request):
 @router.get("/system/restart", name='system_restart')
 @aiohttp_jinja2.template('system/index.html')
 async def system_restart(request):
+    await raise_permission(request, permission=None)
     # TODO shedule exit for a few seconds and return a redirect
     asyncio.get_event_loop().call_later(1, exit, 0)
     raise web.HTTPSeeOther(request.app.router['system'].url_for())
@@ -55,6 +60,7 @@ async def system_restart(request):
 @router.get("/system/log_file", name='system_log_file')
 @aiohttp_jinja2.template('system/index.html')
 async def system_log_file(request):
+    await raise_permission(request, permission=None)
     with open(request.app['options'].log_file, "rt") as fp:
         return web.Response(body=fp.read(), content_type="text/plain")
         # return {'text': fp.read()}
@@ -63,6 +69,7 @@ async def system_log_file(request):
 @router.get("/system/parameters", name='system_parameters')
 @aiohttp_jinja2.template("system/parameters.html")
 async def parameters(request: web.Request):
+    await raise_permission(request, permission=None)
     items = {}
     items['max_duration'] = get_parameters().max_duration
     items['start_time_1'] = get_parameters().start_time_1
@@ -79,6 +86,7 @@ async def parameters(request: web.Request):
 @router.post("/system/parameters")
 @aiohttp_jinja2.template("system/parameters.html")
 async def parameters_apply(request: web.Request):
+    await raise_permission(request, permission=None)
     parameters = get_parameters()
     items = await request.post()
     for item in items:
