@@ -41,8 +41,6 @@ class Db:
         try:
             self.conn = sqlite3.connect(options.db_filename,
                                         detect_types=sqlite3.PARSE_DECLTYPES)
-            self.conn.execute("PRAGMA foreign_keys = ON")
-            self.conn.row_factory = sqlite3.Row
         except Exception as e:
             _log.error(f'Unable to connect to database: {e}')
             if self.conn is not None:

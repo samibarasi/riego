@@ -22,7 +22,6 @@ from riego.model.parameters import setup_parameters
 from riego.web.websockets import setup_websockets
 from riego.web.routes import setup_routes
 from riego.web.error_pages import setup_error_pages
-from riego.web.http_sessions import setup_http_sessions
 from riego.web.security import current_user_ctx_processor
 
 
@@ -31,7 +30,9 @@ import jinja2
 import aiohttp_jinja2
 import aiohttp_debugtoolbar
 from aiohttp_remotes import setup as setup_remotes, XForwardedRelaxed
-
+from aiohttp_session import setup as session_setup
+from aiohttp_session.memcached_storage import MemcachedStorage
+import aiomcache
 
 from riego import __version__
 
@@ -92,7 +93,12 @@ async def run_app(options=None):
     setup_timer(app=app, options=options, db=db,
                 mqtt=mqtt, valves=valves, parameters=parameters)
 
-    setup_http_sessions(app=app, options=options)
+    mcache = aiomcache.Client(options.memcached_host, options.memcached_port)
+    session_setup(app, MemcachedStorage(mcache))
+
+    async def mcache_shutdown(app):
+        await mcache.close()
+    app.on_shutdown.append(mcache_shutdown)
 
     loader = jinja2.FileSystemLoader(options.http_server_template_dir)
     aiohttp_jinja2.setup(app,
@@ -131,12 +137,12 @@ def _setup_logging(options=None):
         level = logging.DEBUG
     else:
         level = logging.INFO
+    Path(options.log_file).parent.mkdir(parents=True, exist_ok=True)
     file_handler = RotatingFileHandler(options.log_file, mode='a',
                                        maxBytes=options.log_max_bytes,
                                        backupCount=options.log_backup_count,
                                        encoding=None, delay=0)
     file_handler.setFormatter(formatter)
-    Path(options.log_file).parent.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(level=level, handlers=[stream_handler, file_handler])
 
     if options.enable_gmqtt_debug_log:
@@ -177,7 +183,7 @@ def _get_options():
     p.add('--max_age_remember_me', type=int, default=7776000)
     p.add('--cookie_name_remember_me', default="remember_me")
     p.add('--reset_admin', help='Reset admin-pw to given value an exit')
-    p.add('--websockets_max_receive_size', type=int, default=1024 )
+    p.add('--websockets_max_receive_size', type=int, default=1024)
 # Session keys
     p.add('--session_key_websocket_auth', default='websocket_auth')
     # TODO

@@ -1,7 +1,7 @@
 from typing import Any, Dict
 import aiohttp_jinja2
 from aiohttp import web
-from aiohttp_session import get_session, new_session
+from aiohttp_session import get_session
 
 from sqlite3 import IntegrityError
 from riego.db import get_db
@@ -9,7 +9,7 @@ from riego.web.security import (get_user, password_check,
                                 password_hash, delete_websocket_auth)
 import secrets
 import asyncio
-import time
+
 
 from logging import getLogger
 _log = getLogger(__name__)
@@ -26,7 +26,7 @@ def setup_routes_users(app):
 async def login(request: web.Request) -> Dict[str, Any]:
     redirect = request.rel_url.query.get("redirect", "")
     csrf_token = secrets.token_urlsafe()
-#    await new_session(request)
+#    session = await new_session(request)
     session = await get_session(request)
     session['csrf_token'] = csrf_token
     return {'csrf_token': csrf_token, 'redirect': redirect}
@@ -51,7 +51,7 @@ async def login_apply(request: web.Request) -> Dict[str, Any]:
                     WHERE identity = ?""", (form['identity'],))
     user = cursor.fetchone()
 
-    if user is None or user['is_disabled']:
+    if user is None or user['is_disabled'] or not len(user['password']):
         await asyncio.sleep(2)
         raise web.HTTPSeeOther(request.app.router['login'].url_for())
 #    if not bcrypt.checkpw(form['password'].encode('utf-8'), user['password']):
