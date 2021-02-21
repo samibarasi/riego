@@ -140,4 +140,5 @@ async def _do_update():
         "--no-python-version-warning",
         "-q", "-q", "-q")
     await proc.wait()
-    return proc.returncode
+    exit (0)
+    #return proc.returncode
