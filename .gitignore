@@ -3,6 +3,7 @@
 .vscode/
 log/*
 db/*
+ssh/*
 
 /PRIVATE.txt
 /CHANGELOG.md

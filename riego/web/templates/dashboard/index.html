@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% set title = "Riego - Dashboard" %}
+{% set active_menu = "dashboard" %}
+
+{% block content %}
+
+{%for valve in valves %}
+
+<div class="bg-light p-3 rounded">
+    <h4><a href="{{url('valves_item_edit', item_id=valve['id']) }}">{{valve['name']}}</a></h4>
+    <div class="row g-3">
+        <div class="col form-check">
+            <label class="form-check-label"><a href="{{url('events_item_filter', item_id=valve['id']) }}">{{valve['date_last_run']}}</a></label>
+        </div>
+        <div class="col form-check">
+            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="button" autocomplete="off"
+            onclick="document.getElementById('valves_{{valve['id']}}_fieldset_1').disabled = this.classList.contains('active')?false:true;this.blur()">Zeiten ändern</button>
+        </div>
+    </div>
+    <fieldset id="valves_{{valve['id']}}_fieldset_1" disabled>
+    <label for="valves_{{valve['id']}}_duration" class="form-label">Dauer: <span>{{valve['duration']}}</span> Minuten</label>
+    <input type="range" class="form-range" min="0" max="90" id="valves_{{valve['id']}}_duration" autocomplete="off" value="{{valve['duration']}}"
+        onchange="ws.send(JSON.stringify({action: 'update',
+                                          scope: 'valves',
+                                          id: '{{valve['id']}}',
+                                          token: '{{websocket_auth['token']}}',
+                                          sequence: '{{websocket_auth['sequence']}}',
+                                          key: 'duration',
+                                          value: this.value }));this.blur();"
+        oninput="this.previousElementSibling.children[0].innerHTML = this.value;">
+
+    <label for="valves_{{valve['id']}}_interval" class="form-label">Intervall: <span>{{valve['interval']}}</span> Tage</label>
+    <input type="range" class="form-range" min="0" max="10" id="valves_{{valve['id']}}_interval" autocomplete="off" value="{{valve['interval']}}"
+        onchange="ws.send(JSON.stringify({action: 'update',
+                                          scope: 'valves',
+                                          id: '{{valve['id']}}',
+                                          token: '{{websocket_auth['token']}}',
+                                          sequence: '{{websocket_auth['sequence']}}',
+                                          key: 'interval',
+                                          value: this.value } ));this.blur();"
+        oninput="this.previousElementSibling.children[0].innerHTML = this.value ;">
+    </fieldset>
+
+    <div class="row g-3">
+        <div class="col form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="valves_{{valve['id']}}_is_running" autocomplete="off" 
+            {% if valve['is_running'] == 1 %} checked {% endif %}
+                onchange="ws.send(JSON.stringify({action: 'update',
+                                                  scope: 'valves',
+                                                  id: '{{ valve['id'] }}',
+                                                  token: '{{websocket_auth['token']}}',
+                                                  sequence: '{{websocket_auth['sequence']}}',
+                                                  key: 'is_running',
+                                                  value: this.checked } ))">
+            <label class="form-check-label" for="valves_{{valve['id']}}_is_running">An/Aus</label>
+        </div>
+
+        <div class="col form-check">
+            <input class="form-check-input" type="checkbox" id="valves_{{valve['id']}}_is_enabled" autocomplete="off"
+                {% if valve['is_enabled'] == 1 %} checked {% endif %}
+                onchange="ws.send(JSON.stringify({action: 'update',
+                                                  scope: 'valves',
+                                                  id: '{{valve['id'] }}',
+                                                  token: '{{websocket_auth['token']}}',
+                                                  sequence: '{{websocket_auth['sequence']}}',
+                                                  key: 'is_enabled',
+                                                  value: this.checked } ))">
+            <label class="form-check-label" for="valves_{{valve['id']}}_is_enabled">Automatik</label>
+        </div>
+    </div>
+    
+
+    
+</div>
+<p>&nbsp;</p>
+
+{%endfor%}
+
+<script>
+    var ws = null;
+    function start (){
+        var wsUri = (window.location.protocol == 'https:' && 'wss://' || 'ws://') + window.location.host + "{{url('websockets')}}";
+        ws = new WebSocket(wsUri);
+        ws.onmessage = function (event) {
+            data = JSON.parse(event.data);
+            if (data.scope != "valves") {
+                return;
+            }
+            switch (data.action) {
+                case 'status':
+                    dom_id = data.scope + "_" + data.id + "_" + data.key
+                    el = document.getElementById(dom_id)
+                    if (data.value == -1) {
+                        el.disabled = true;
+                    } else {
+                        el.disabled = false;
+                    }
+                    if (el.hasAttribute('value')) {
+                        el.value = data.value;
+                        el.previousElementSibling.children[0].innerHTML = data.value
+                    }
+                    if (el.checked !== "undefined") {
+                        el.checked = data.value
+                    }
+                    el.blur();
+                    break;
+                case 'reload':
+                    location.reload(true);
+                    break;
+                default:
+                    break;
+            }
+        };
+        ws.onclose = function(){
+            //reconnect now
+            check();
+        };
+        ws.onopen = function(){
+            ws.send(JSON.stringify({action: 'send_token',
+                                    scope: 'authenticate_v1',
+                                    token: '{{websocket_auth["token"]}}',
+                                    sequence: '{{websocket_auth["sequence"]}}'} ));
+        };
+
+    };
+    function check(){
+        if(!ws || ws.readyState == 3) start();
+   }
+    start();
+    setInterval(check, 5000);
+
+</script>
+
+{% endblock %}

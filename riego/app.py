@@ -30,6 +30,7 @@ import jinja2
 import aiohttp_jinja2
 import aiohttp_debugtoolbar
 from aiohttp_remotes import setup as setup_remotes, XForwardedRelaxed
+
 from aiohttp_session import setup as session_setup
 from aiohttp_session.memcached_storage import MemcachedStorage
 import aiomcache
@@ -108,8 +109,10 @@ async def run_app(options=None):
                          )
 
     await setup_remotes(app, XForwardedRelaxed())
-    setup_routes(app=app, options=options)
-    setup_error_pages(app=app)
+    setup_routes(app, options=options)
+
+    if not options.verbose:
+        setup_error_pages(app)
 
     if options.enable_aiohttp_debug_toolbar:
         aiohttp_debugtoolbar.setup(
@@ -179,7 +182,6 @@ def _get_options():
     p.add('--log_backup_count', help='How many files to rotate',
           default=3, type=int)
 # Secrets & Scurity
-    p.add('--cloud_identifier', help='Unique id for Cloud Identity')
     p.add('--max_age_remember_me', type=int, default=7776000)
     p.add('--cookie_name_remember_me', default="remember_me")
     p.add('--reset_admin', help='Reset admin-pw to given value an exit')
@@ -189,17 +191,25 @@ def _get_options():
     # TODO
     p.add('--session_key_user_id', default='user_id',
           help='# TODO not used Yet')
-
-# Memcache
-    p.add('--memcached_host', help='IP adress of memcached host',
-          default='127.0.0.1')
-    p.add('--memcached_port', help='Port of memcached service',
-          default=11211, type=int)
 # HTTP-Server
     p.add('--http_server_bind_address',
           help='http-server bind address', default='0.0.0.0')
     p.add('--http_server_bind_port', help='http-server bind port',
           default=8080, type=int)
+# Memcache
+    p.add('--memcached_host', help='IP adress of memcached host',
+          default='127.0.0.1')
+    p.add('--memcached_port', help='Port of memcached service',
+          default=11211, type=int)
+# Cloud-Server
+    p.add('--cloud_identifier', help='Unique id for Cloud Identity')
+    p.add('--cloud_ssh_hostname', help='Hostname for cloud service',
+          default='cloud.finca-panorama.de')
+    p.add('--cloud_ssh_port', help='Port of Cloud Service Host',
+          default=8022, type=int)
+    p.add('--cloud_ssh_ca', help='Filename for ca file',
+          default=pkg_resources.resource_filename('riego.ssh', 'ca.pub'))
+
 # Directories
     p.add('--base_dir', help='Change only if you know what you are doing',
           default=Path(__file__).parent)

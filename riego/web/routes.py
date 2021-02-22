@@ -1,4 +1,6 @@
-import riego.web.views.dashboard
+from riego.web.views.dashboard import Dashboard
+
+
 from riego.web.views.boxes import setup_routes_boxes
 from riego.web.views.valves import setup_routes_valves
 from riego.web.views.events import setup_routes_events
@@ -7,9 +9,10 @@ from riego.web.views.users import setup_routes_users
 
 
 def setup_routes(app=None, options=None):
-    
+    dashboard = Dashboard(app)
+
     routes = [
-        ('GET', '/',   riego.web.views.dashboard.index,      'home'),
+        ('GET', '/',   dashboard.index,      'home'),
     ]
 
     for route in routes:
