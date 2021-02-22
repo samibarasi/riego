@@ -6,18 +6,16 @@
 
 {% block content %}
 <h1>Items</h1>
-<p>
-  <ul>
+<ul>
     {% for item in items %}
     <li>
-      <a href="{{url('boxes_item_view', item_id=item['id']) }}">{{ item['name'] }}</a> {{ item['topic'] }}
+        <a href="{{url('boxes_item_view', item_id=item['id']) }}">{{ item['name'] }}</a> {{ item['topic'] }}
     </li>
     {% endfor %}
-  </ul>
-</p>
+</ul>
 <hr>
 <p>
-  <a href="{{url('boxes_new')}}">New</a> 
+    <a href="{{url('boxes_new')}}">New</a>
 </p>
 
 {% endblock %}

@@ -30,9 +30,23 @@ async def store_new_keys(options=None):
     print(data['user_cert'])
 
 
-async def main(options=None):
+async def ssh_connect(options=None):
+    async with asyncssh.connect('127.0.0.1',
+                                port=8022,
+                                # username='guest',
+                                client_keys=['ssh/ssh_user_key'],
+#                                client_certs=['ssh/id_rsa-cert.pub'],
+                                known_hosts=([],
+                                             ['riego/ssh/ssh_host_ca.pub'],
+                                             [])) as conn:
+        result = await conn.run('ls abc', check=True)
+        print(result.stdout, end='')
 
-    await store_new_keys(options=options)
+
+async def main(options=None):
+    await ssh_connect(options=options)
+
+#    await store_new_keys(options=options)
 
 
 if __name__ == "__main__":
@@ -42,7 +56,7 @@ if __name__ == "__main__":
             self.ssh_user_key = "ssh/ssh_user_key"
             self.cloud_identifier = "dfsgdfgdfsgsdfg"
             self.key_api_url = 'http://127.0.0.1:8181/api_20210221/'
-            self.ssh_key_algorithm ='ssh-ed25519'
+            self.ssh_key_algorithm = 'ssh-ed25519'
 
     options = Options()
 
