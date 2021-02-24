@@ -20,7 +20,7 @@ async def store_new_keys(options=None):
             'public_user_key': public_user_key}
 
     async with aiohttp.ClientSession() as session:
-        async with session.post(options.key_api_url, json=data) as resp:
+        async with session.post(options.cloud_api_url, json=data) as resp:
             print(resp.status)
             data = await resp.json()
 
@@ -33,12 +33,10 @@ async def store_new_keys(options=None):
 async def ssh_connect(options=None):
     async with asyncssh.connect('127.0.0.1',
                                 port=8022,
-                                # username='guest',
+                                username='sddwdfwdwe',
                                 client_keys=['ssh/ssh_user_key'],
 #                                client_certs=['ssh/id_rsa-cert.pub'],
-                                known_hosts=([],
-                                             ['riego/ssh/ssh_host_ca.pub'],
-                                             [])) as conn:
+                                known_hosts='riego/ssh/known_hosts') as conn:
         result = await conn.run('ls abc', check=True)
         print(result.stdout, end='')
 
@@ -55,7 +53,7 @@ if __name__ == "__main__":
         def __init__(self):
             self.ssh_user_key = "ssh/ssh_user_key"
             self.cloud_identifier = "dfsgdfgdfsgsdfg"
-            self.key_api_url = 'http://127.0.0.1:8181/api_20210221/'
+            self.cloud_api_url = 'http://127.0.0.1:8181/api_20210221/'
             self.ssh_key_algorithm = 'ssh-ed25519'
 
     options = Options()

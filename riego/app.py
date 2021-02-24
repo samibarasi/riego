@@ -122,12 +122,12 @@ async def run_app(options=None):
     main_app = web.Application()
 
     async def main_app_handler(request):
-        raise web.HTTPSeeOther(f'/{options.cloud_identifier}/')
+        raise web.HTTPSeeOther(f'/{parameters.cloud_identifier}/')
 
     main_app.router.add_get('/', main_app_handler)
-    main_app.add_subapp(f'/{options.cloud_identifier}/', app)
+    main_app.add_subapp(f'/{parameters.cloud_identifier}/', app)
 
-    logging.getLogger(__name__).info(f'Start {options.cloud_identifier}')
+    logging.getLogger(__name__).info(f'Start {parameters.cloud_identifier}')
     return main_app
 
 
@@ -196,23 +196,6 @@ def _get_options():
           help='http-server bind address', default='0.0.0.0')
     p.add('--http_server_bind_port', help='http-server bind port',
           default=8080, type=int)
-# Memcache
-    p.add('--memcached_host', help='IP adress of memcached host',
-          default='127.0.0.1')
-    p.add('--memcached_port', help='Port of memcached service',
-          default=11211, type=int)
-# Cloud-Server
-    p.add('--cloud_identifier', help='Unique id for Cloud Identity')
-    p.add('--cloud_ssh_hostname', help='Hostname for cloud service',
-          default='cloud.finca-panorama.de')
-    p.add('--cloud_ssh_port', help='Port of Cloud Service Host',
-          default=8022, type=int)
-    p.add('--cloud_ssh_ca', help='Filename for ca file',
-          default=pkg_resources.resource_filename('riego.ssh', 'ca.pub'))
-
-# Directories
-    p.add('--base_dir', help='Change only if you know what you are doing',
-          default=Path(__file__).parent)
     p.add('--http_server_static_dir',
           help='Serve static html files from this directory',
           default=pkg_resources.resource_filename('riego.web', 'static'))
@@ -221,6 +204,22 @@ def _get_options():
           default=pkg_resources.resource_filename('riego.web', 'templates'))
     p.add('--websocket_path', help='url path for websocket',
           default="/ws")
+# Memcache
+    p.add('--memcached_host', help='IP adress of memcached host',
+          default='127.0.0.1')
+    p.add('--memcached_port', help='Port of memcached service',
+          default=11211, type=int)
+# Cloud-Server
+#    p.add('--cloud_identifier', help='Unique id for Cloud Identity')
+    p.add('--cloud_api_url', help='Hostname for cloud service',
+          default='https://cloud.finca-panorama.de:8181/api_20210221/')
+    p.add('--ssh_host_ca', help='Filename for ca file',
+          default=pkg_resources.resource_filename('riego.ssh',
+                                                  'ssh_host_ca.pub'))
+
+# Directories
+    p.add('--base_dir', help='Change only if you know what you are doing',
+          default=Path(__file__).parent)
 # MQTT
     p.add('-m', '--mqtt_host', help='IP adress of mqtt host',
           default='127.0.0.1')
@@ -298,14 +297,14 @@ def _get_options():
         exit(0)
 
 # Create cloud_identifier if not exist and save to ini.file
-    if options.cloud_identifier is None:
-        options.cloud_identifier = secrets.token_urlsafe(12)
-        try:
-            with open(PRIMARY_INI_FILE, 'at') as f:
-                f.write(f'\ncloud_identifier = {options.cloud_identifier}\n')
-        except IOError as e:
-            print(f'Unable to write cloud_identifier to config file: {e}')
-            exit(1)
+#    if options.cloud_identifier is None:
+#        options.cloud_identifier = secrets.token_urlsafe(12)
+#        try:
+#            with open(PRIMARY_INI_FILE, 'at') as f:
+#                f.write(f'\ncloud_identifier = {options.cloud_identifier}\n')
+#        except IOError as e:
+#            print(f'Unable to write cloud_identifier to config file: {e}')
+#            exit(1)
 
     return options
 

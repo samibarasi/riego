@@ -1,4 +1,6 @@
 from sqlite3 import IntegrityError
+import secrets
+
 
 from logging import getLogger
 _log = getLogger(__name__)
@@ -34,6 +36,14 @@ class Parameters:
         self._smtp_user = options.parameters_smtp_user
         self._smtp_password = options.parameters_smtp_password
         self._smtp_from = options.parameters_smtp_from
+
+        self._cloud_identifier = None
+
+        self._ssh_server_hostname = None
+        self._ssh_server_port = None
+        self._ssh_server_redirect_port = None
+        self._ssh_user_key = None
+        self._ssh_user_key_pub = None
 
         self._load_all()
 
@@ -109,21 +119,79 @@ class Parameters:
         self._smtp_from = value
         self._update_value_by_key(key="smtp_from", value=value)
 
-    def _update_value_by_key(self, key=None, value=None):
+    @property
+    def ssh_server_hostname(self):
+        return self._ssh_server_hostname
+
+    @ssh_server_hostname.setter
+    def ssh_server_hostname(self, value):
+        self._ssh_server_hostname = value
+        self._update_value_by_key(key="ssh_server_hostname", value=value)
+
+    @property
+    def ssh_server_port(self):
+        return self._ssh_server_port
+
+    @ssh_server_port.setter
+    def ssh_server_port(self, value):
+        self._ssh_server_port = value
+        self._update_value_by_key(key="ssh_server_port", value=value)
+
+    @property
+    def ssh_server_redirect_port(self):
+        return self._ssh_server_redirect_port
+
+    @ssh_server_redirect_port.setter
+    def ssh_server_redirect_port(self, value):
+        self._ssh_server_redirect_port = value
+        self._update_value_by_key(key="ssh_server_redirect_port", value=value)
+
+    @property
+    def ssh_user_key(self):
+        return self._ssh_user_key
+
+    @ssh_user_key.setter
+    def ssh_user_key(self, value):
+        self._ssh_user_key = value
+        self._update_value_by_key(key="ssh_user_key", value=value)
+
+    @property
+    def ssh_user_key_pub(self):
+        return self._ssh_user_key_pub
+
+    @ssh_user_key_pub.setter
+    def ssh_user_key_pub(self, value):
+        self._ssh_user_key_pub = value
+        self._update_value_by_key(key="ssh_user_key_pub", value=value)
+
+    @property
+    def cloud_identifier(self):
+        if self._cloud_identifier is None:
+            self.cloud_identifier = secrets.token_urlsafe(12)
+        return self._cloud_identifier
+
+    @cloud_identifier.setter
+    def cloud_identifier(self, value):
+        self._cloud_identifier = value
+        self._update_value_by_key(key="cloud_identifier", value=value)
+
+    def _update_value_by_key(self, key=None, value=None)->bool:
+        ret = True
         try:
             with self._db_conn:
                 self._db_conn.execute(
                     'UPDATE parameters SET value = ? WHERE key = ?',
                     (value, key))
         except IntegrityError:
-            pass
+            ret = False
         try:
             with self._db_conn:
                 self._db_conn.execute(
                     "INSERT INTO parameters (value, key) VALUES (?,?)",
                     (value, key))
         except IntegrityError:
-            pass
+            ret = False
+        return ret
 
     def _load_all(self):
         c = self._db_conn.cursor()
