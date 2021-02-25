@@ -37,14 +37,13 @@ class Mqtt:
         self.client.on_subscribe = self._on_subscribe
         self._subscriptions = {}
 
-        self._task = None
         app.cleanup_ctx.append(self._mqtt_engine)
 
     async def _mqtt_engine(self, app):
-        self._task = asyncio.create_task(self._startup(app))
+        task = asyncio.create_task(self._startup(app))
         yield
         # TODO _shutdown should not be an awaitable
-        await self._shutdown(app, self._task)
+        await self._shutdown(app, task)
 
     async def _startup(self, app) -> None:
         _log.debug('MQTT Engine startup called')

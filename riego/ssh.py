@@ -5,6 +5,58 @@ import json
 from pathlib import Path
 
 
+from logging import getLogger
+_log = getLogger(__name__)
+
+_instance = None
+
+
+def get_ssh():
+    global _instance
+    return _instance
+
+
+def setup_ssh(app=None, options=None, parameters=None):
+    global _instance
+    if _instance is not None:
+        del _instance
+    _instance = Ssh(app=app, options=options, parameters=parameters)
+    return _instance
+
+
+class Ssh:
+    def __init__(self, app=None, options=None, parameters=None):
+        global _instance
+        if _instance is None:
+            _instance = self
+
+        self._task = None
+        self._conn = None
+        app.cleanup_ctx.append(self._ssh_engine)
+
+    async def _ssh_engine(self, app):
+        task = asyncio.create_task(self._startup(app))
+        yield
+        # TODO _shutdown should not be an awaitable
+        await self._shutdown(app, task)
+
+    async def _startup(self, app) -> None:
+        _log.debug('Ssh Engine startup called')
+        async with asyncssh.connect('127.0.0.1',
+                                    port=8022,
+                                    username='tt4',
+                                    client_keys=['ssh/ssh_user_key'],
+                                    known_hosts='riego/ssh/known_hosts') as conn:
+            
+            listener = await conn.forward_remote_port('localhost', 3334, 'localhost', 8080)
+            await listener.wait_closed()
+
+    async def _shutdown(self, app, task) -> None:
+        _log.debug('Ssh Engine shutdown called')
+        await task.cancelled()
+        return None
+
+
 async def store_new_keys(options=None):
 
     Path(options.ssh_user_key).parent.mkdir(parents=True, exist_ok=True)
@@ -33,12 +85,14 @@ async def store_new_keys(options=None):
 async def ssh_connect(options=None):
     async with asyncssh.connect('127.0.0.1',
                                 port=8022,
-                                username='sddwdfwdwe',
+                                username='tt4',
                                 client_keys=['ssh/ssh_user_key'],
-#                                client_certs=['ssh/id_rsa-cert.pub'],
+                                #                                client_certs=['ssh/id_rsa-cert.pub'],
                                 known_hosts='riego/ssh/known_hosts') as conn:
-        result = await conn.run('ls abc', check=True)
-        print(result.stdout, end='')
+        listener = await conn.forward_remote_port('localhost', 3334, 'localhost', 8080)
+#        result = await conn.run('ls abc', check=True)
+#        print(result.stdout, end='')
+        await listener.wait_closed()
 
 
 async def main(options=None):
