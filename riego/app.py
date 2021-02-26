@@ -201,7 +201,7 @@ def _get_options():
           help='# TODO not used Yet')
 # HTTP-Server
     p.add('--http_server_bind_address',
-          help='http-server bind address', default='127.0.0.1')
+          help='http-server bind address', default='0.0.0.0')
     p.add('--http_server_bind_port', help='http-server bind port',
           default=8080, type=int)
     p.add('--http_server_static_dir',
