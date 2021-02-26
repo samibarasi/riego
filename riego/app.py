@@ -201,7 +201,7 @@ def _get_options():
           help='# TODO not used Yet')
 # HTTP-Server
     p.add('--http_server_bind_address',
-          help='http-server bind address', default='0.0.0.0')
+          help='http-server bind address', default='127.0.0.1')
     p.add('--http_server_bind_port', help='http-server bind port',
           default=8080, type=int)
     p.add('--http_server_static_dir',
@@ -220,7 +220,7 @@ def _get_options():
 # Cloud-Server
 #    p.add('--cloud_identifier', help='Unique id for Cloud Identity')
     p.add('--cloud_api_url', help='Hostname for cloud service',
-          default='https://cloud.finca-panorama.es:8181/api_20210221/')
+          default='https://cloud.finca-panorama.es/api_20210221/')
     p.add('--ssh_host_ca', help='Filename for ca file',
           default=pkg_resources.resource_filename('riego.ssh',
                                                   'ssh_host_ca.pub'))
