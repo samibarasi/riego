@@ -58,7 +58,7 @@ class Ssh:
                     port=self._parameters.ssh_server_port,
                     username=self._parameters.cloud_identifier,
                     client_keys=ssh_user_key,
-                    known_hosts='riego/ssh/known_hosts') as self._conn:
+                    known_hosts=self._options.ssh_known_hosts) as self._conn:
 
                 self._listener = await self._conn.forward_remote_port(
                     'localhost',  # Bind to localhost on remote Server
@@ -83,16 +83,15 @@ class Ssh:
         self._parameters.ssh_user_key = key.export_private_key()
         public_user_key = key.export_public_key().decode('ascii')
 
-        print(public_user_key)
         data = {'cloud_identifier': self._parameters.cloud_identifier,
                 'public_user_key': public_user_key}
 
         async with aiohttp.ClientSession() as session:
             async with session.post(self._options.cloud_api_url,
                                     json=data) as resp:
-                print(resp.status)
+                if resp.status != 200:
+                    return
                 data = await resp.json()
-
-                self._parameters.ssh_server_hostname = data['ssh_server_hostname']  # noqa: E501
-                self._parameters.ssh_server_port = data['ssh_server_port']
-                self._parameters.ssh_server_listen_port = data['ssh_server_listen_port']  # noqa: E501
+        self._parameters.ssh_server_hostname = data['ssh_server_hostname']  # noqa: E501
+        self._parameters.ssh_server_port = data['ssh_server_port']
+        self._parameters.ssh_server_listen_port = data['ssh_server_listen_port']  # noqa: E501

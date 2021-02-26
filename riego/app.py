@@ -221,9 +221,8 @@ def _get_options():
 #    p.add('--cloud_identifier', help='Unique id for Cloud Identity')
     p.add('--cloud_api_url', help='Hostname for cloud service',
           default='https://cloud.finca-panorama.es/api_20210221/')
-    p.add('--ssh_host_ca', help='Filename for ca file',
-          default=pkg_resources.resource_filename('riego.ssh',
-                                                  'ssh_host_ca.pub'))
+    p.add('--ssh_known_hosts', help='SSh-Server verification',
+          default=pkg_resources.resource_filename('riego.ssh', 'known_hosts'))
 
 # Directories
     p.add('--base_dir', help='Change only if you know what you are doing',
