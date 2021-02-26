@@ -1,8 +1,6 @@
 import asyncssh
 import asyncio
 import aiohttp
-import json
-from pathlib import Path
 
 
 from logging import getLogger
@@ -30,87 +28,71 @@ class Ssh:
         if _instance is None:
             _instance = self
 
-        self._task = None
+        self._parameters = parameters
+        self._options = options
+        self._STOP = False
         self._conn = None
+        self._listener = None
         app.cleanup_ctx.append(self._ssh_engine)
 
     async def _ssh_engine(self, app):
         task = asyncio.create_task(self._startup(app))
         yield
-        # TODO _shutdown should not be an awaitable
         await self._shutdown(app, task)
 
     async def _startup(self, app) -> None:
         _log.debug('Ssh Engine startup called')
-        async with asyncssh.connect('127.0.0.1',
-                                    port=8022,
-                                    username='tt4',
-                                    client_keys=['ssh/ssh_user_key'],
-                                    known_hosts='riego/ssh/known_hosts') as conn:
-            
-            listener = await conn.forward_remote_port('localhost', 3334, 'localhost', 8080)
-            await listener.wait_closed()
+        await self.store_new_keys()
+
+        while not self._STOP:
+            if (self._parameters.ssh_server_hostname is None or
+                self._parameters.ssh_server_port is None or
+                self._parameters.ssh_server_listen_port is None or
+                    self._parameters.ssh_user_key is None):
+                await asyncio.sleep(3)
+                continue
+            ssh_user_key = asyncssh.import_private_key(
+                self._parameters.ssh_user_key)
+            async with asyncssh.connect(
+                    self._parameters.ssh_server_hostname,
+                    port=self._parameters.ssh_server_port,
+                    username=self._parameters.cloud_identifier,
+                    client_keys=ssh_user_key,
+                    known_hosts='riego/ssh/known_hosts') as self._conn:
+
+                self._listener = await self._conn.forward_remote_port(
+                    'localhost',  # Bind to localhost on remote Server
+                    self._parameters.ssh_server_listen_port,
+                    'localhost',
+                    self._options.http_server_bind_port)
+                await self._listener.wait_closed()
+            await asyncio.sleep(3)
 
     async def _shutdown(self, app, task) -> None:
         _log.debug('Ssh Engine shutdown called')
-        await task.cancelled()
+        self._STOP = True
+        if self._listener is not None:
+            self._listener.close()
+        if self._conn is not None:
+            self._conn.close()
+#            await self._conn.wait_closed()
         return None
 
+    async def store_new_keys(self):
+        key = asyncssh.generate_private_key(self._options.ssh_key_algorithm)
+        self._parameters.ssh_user_key = key.export_private_key()
+        public_user_key = key.export_public_key().decode('ascii')
 
-async def store_new_keys(options=None):
+        print(public_user_key)
+        data = {'cloud_identifier': self._parameters.cloud_identifier,
+                'public_user_key': public_user_key}
 
-    Path(options.ssh_user_key).parent.mkdir(parents=True, exist_ok=True)
+        async with aiohttp.ClientSession() as session:
+            async with session.post(self._options.cloud_api_url,
+                                    json=data) as resp:
+                print(resp.status)
+                data = await resp.json()
 
-    user_key = asyncssh.generate_private_key(options.ssh_key_algorithm)
-    user_key.write_private_key(options.ssh_user_key)
-    user_key.write_public_key(f'{options.ssh_user_key}.pub')
-
-    public_user_key = user_key.export_public_key().decode('ascii')
-
-    print(public_user_key)
-    data = {'cloud_identifier': options.cloud_identifier,
-            'public_user_key': public_user_key}
-
-    async with aiohttp.ClientSession() as session:
-        async with session.post(options.cloud_api_url, json=data) as resp:
-            print(resp.status)
-            data = await resp.json()
-
-    user_cert = asyncssh.import_certificate(data['user_cert'])
-    user_cert.write_certificate(f'{options.ssh_user_key}-cert.pub')
-    print(data['public_user_key'])
-    print(data['user_cert'])
-
-
-async def ssh_connect(options=None):
-    async with asyncssh.connect('127.0.0.1',
-                                port=8022,
-                                username='tt4',
-                                client_keys=['ssh/ssh_user_key'],
-                                #                                client_certs=['ssh/id_rsa-cert.pub'],
-                                known_hosts='riego/ssh/known_hosts') as conn:
-        listener = await conn.forward_remote_port('localhost', 3334, 'localhost', 8080)
-#        result = await conn.run('ls abc', check=True)
-#        print(result.stdout, end='')
-        await listener.wait_closed()
-
-
-async def main(options=None):
-    await ssh_connect(options=options)
-
-#    await store_new_keys(options=options)
-
-
-if __name__ == "__main__":
-
-    class Options():
-        def __init__(self):
-            self.ssh_user_key = "ssh/ssh_user_key"
-            self.cloud_identifier = "dfsgdfgdfsgsdfg"
-            self.cloud_api_url = 'http://127.0.0.1:8181/api_20210221/'
-            self.ssh_key_algorithm = 'ssh-ed25519'
-
-    options = Options()
-
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main(options=options))
+                self._parameters.ssh_server_hostname = data['ssh_server_hostname']  # noqa: E501
+                self._parameters.ssh_server_port = data['ssh_server_port']
+                self._parameters.ssh_server_listen_port = data['ssh_server_listen_port']  # noqa: E501

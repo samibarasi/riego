@@ -73,7 +73,7 @@ def main():
 async def run_app(options=None):
     loop = asyncio.get_event_loop()
 
-    if options.enable_asyncio_debug:
+    if options.enable_asyncio_debug_log:
         loop.set_debug(True)
 
     app = web.Application()
@@ -88,7 +88,7 @@ async def run_app(options=None):
     db = setup_db(options=options)
     websockets = setup_websockets(app=app, db=db, options=options)
     parameters = setup_parameters(app=app, db=db, options=options)
-    ssh = setup_ssh(app=app,parameters=parameters,options=options)
+    setup_ssh(app=app, parameters=parameters, options=options)
     mqtt = setup_mqtt(app=app, options=options)
     setup_boxes(options=options, db=db, mqtt=mqtt)
     valves = setup_valves(options=options, db=db,
@@ -155,6 +155,11 @@ def _setup_logging(options=None):
     else:
         logging.getLogger("gmqtt").setLevel(logging.ERROR)
 
+    if options.enable_ssh_debug_log:
+        logging.getLogger("asyncssh").setLevel(logging.DEBUG)
+    else:
+        logging.getLogger("asyncssh").setLevel(logging.ERROR)
+
     if options.enable_aiohttp_access_log:
         logging.getLogger("aiohttp.access").setLevel(logging.DEBUG)
     else:
@@ -188,6 +193,7 @@ def _get_options():
     p.add('--cookie_name_remember_me', default="remember_me")
     p.add('--reset_admin', help='Reset admin-pw to given value an exit')
     p.add('--websockets_max_receive_size', type=int, default=1024)
+    p.add('--ssh_key_algorithm', default='ssh-ed25519')
 # Session keys
     p.add('--session_key_websocket_auth', default='websocket_auth')
     # TODO
@@ -214,7 +220,7 @@ def _get_options():
 # Cloud-Server
 #    p.add('--cloud_identifier', help='Unique id for Cloud Identity')
     p.add('--cloud_api_url', help='Hostname for cloud service',
-          default='https://cloud.finca-panorama.de:8181/api_20210221/')
+          default='https://cloud.finca-panorama.es:8181/api_20210221/')
     p.add('--ssh_host_ca', help='Filename for ca file',
           default=pkg_resources.resource_filename('riego.ssh',
                                                   'ssh_host_ca.pub'))
@@ -263,7 +269,8 @@ def _get_options():
 # Debug
     p.add('--enable_aiohttp_debug_toolbar', action='store_true')
     p.add('--enable_aiohttp_access_log', action='store_true')
-    p.add('--enable_asyncio_debug', action='store_true')
+    p.add('--enable_asyncio_debug_log', action='store_true')
+    p.add('--enable_ssh_debug_log', action='store_true')
     p.add('--enable_gmqtt_debug_log', action='store_true')
     p.add('--enable_timer_dev_mode', action='store_true')
     p.add('--WindowsSelectorEventLoopPolicy', action='store_true')

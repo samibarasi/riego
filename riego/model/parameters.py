@@ -41,9 +41,8 @@ class Parameters:
 
         self._ssh_server_hostname = None
         self._ssh_server_port = None
-        self._ssh_server_redirect_port = None
+        self._ssh_server_listen_port = None
         self._ssh_user_key = None
-        self._ssh_user_key_pub = None
 
         self._load_all()
 
@@ -138,13 +137,13 @@ class Parameters:
         self._update_value_by_key(key="ssh_server_port", value=value)
 
     @property
-    def ssh_server_redirect_port(self):
-        return self._ssh_server_redirect_port
+    def ssh_server_listen_port(self):
+        return self._ssh_server_listen_port
 
-    @ssh_server_redirect_port.setter
-    def ssh_server_redirect_port(self, value):
-        self._ssh_server_redirect_port = value
-        self._update_value_by_key(key="ssh_server_redirect_port", value=value)
+    @ssh_server_listen_port.setter
+    def ssh_server_listen_port(self, value):
+        self._ssh_server_listen_port = value
+        self._update_value_by_key(key="ssh_server_listen_port", value=value)
 
     @property
     def ssh_user_key(self):
@@ -156,18 +155,11 @@ class Parameters:
         self._update_value_by_key(key="ssh_user_key", value=value)
 
     @property
-    def ssh_user_key_pub(self):
-        return self._ssh_user_key_pub
-
-    @ssh_user_key_pub.setter
-    def ssh_user_key_pub(self, value):
-        self._ssh_user_key_pub = value
-        self._update_value_by_key(key="ssh_user_key_pub", value=value)
-
-    @property
     def cloud_identifier(self):
         if self._cloud_identifier is None:
-            self.cloud_identifier = secrets.token_urlsafe(12)
+            self._cloud_identifier = secrets.token_urlsafe(12)
+            self._update_value_by_key(key="cloud_identifier",
+                                      value=self._cloud_identifier)
         return self._cloud_identifier
 
     @cloud_identifier.setter
@@ -175,7 +167,7 @@ class Parameters:
         self._cloud_identifier = value
         self._update_value_by_key(key="cloud_identifier", value=value)
 
-    def _update_value_by_key(self, key=None, value=None)->bool:
+    def _update_value_by_key(self, key=None, value=None) -> bool:
         ret = True
         try:
             with self._db_conn:
