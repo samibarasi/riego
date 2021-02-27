@@ -76,6 +76,7 @@ class Ssh:
                         'localhost',
                         self._options.http_server_bind_port
                     )
+                    _log.debug(f'localhost on server:{self._parameters.ssh_server_listen_port} localhost:self._options.http_server_bind_port')
                     await self._listener.wait_closed()
             except Exception as e:
                 _log.debug(f'SSH-Exception: {e}')
