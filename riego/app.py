@@ -5,7 +5,6 @@ import os
 import sys
 from pathlib import Path
 import socket
-import secrets
 
 
 import logging
@@ -330,16 +329,6 @@ def _get_options():
     if options.reset_admin:
         _reset_admin(options)
         exit(0)
-
-# Create cloud_identifier if not exist and save to ini.file
-#    if options.cloud_identifier is None:
-#        options.cloud_identifier = secrets.token_urlsafe(12)
-#        try:
-#            with open(PRIMARY_INI_FILE, 'at') as f:
-#                f.write(f'\ncloud_identifier = {options.cloud_identifier}\n')
-#        except IOError as e:
-#            print(f'Unable to write cloud_identifier to config file: {e}')
-#            exit(1)
 
     return options
 

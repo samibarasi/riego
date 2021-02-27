@@ -7,6 +7,8 @@ from riego.web.views.events import setup_routes_events
 from riego.web.views.system import setup_routes_system
 from riego.web.views.users import setup_routes_users
 
+from riego.web.security import setup_routes_security
+
 
 def setup_routes(app=None, options=None):
     dashboard = Dashboard(app)
@@ -25,4 +27,7 @@ def setup_routes(app=None, options=None):
     setup_routes_valves(app)
     setup_routes_events(app)
     setup_routes_system(app)
+    setup_routes_security(app)
+
     setup_routes_users(app)
+    
