@@ -43,7 +43,15 @@ class Ssh:
 
     async def _startup(self, app) -> None:
         _log.debug('Ssh Engine startup called')
-        await self.store_new_keys()
+
+# TODO move the following code to Web-Interface
+        if (
+            self._parameters.ssh_server_hostname is None or
+            self._parameters.ssh_server_port is None or
+            self._parameters.ssh_server_listen_port is None or
+            self._parameters.ssh_user_key is None
+        ):
+            await self.store_new_keys()
 
         while not self._STOP:
             if (self._parameters.ssh_server_hostname is None or
@@ -57,16 +65,16 @@ class Ssh:
             try:
                 async with asyncssh.connect(
                         self._parameters.ssh_server_hostname,
-                        port=int(self._parameters.ssh_server_port),
+                        port=self._parameters.ssh_server_port,
                         username=self._parameters.cloud_identifier,
                         client_keys=ssh_user_key,
                         known_hosts=self._options.ssh_known_hosts
                 ) as self._conn:
                     self._listener = await self._conn.forward_remote_port(
                         'localhost',  # Bind to localhost on remote Server
-                        int(self._parameters.ssh_server_listen_port),
+                        self._parameters.ssh_server_listen_port,
                         'localhost',
-                        int(self._options.http_server_bind_port)
+                        self._options.http_server_bind_port
                     )
                     await self._listener.wait_closed()
             except Exception as e:
