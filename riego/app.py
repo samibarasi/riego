@@ -67,7 +67,9 @@ def main():
 
     web.run_app(run_app(options=options),
                 host=options.http_server_bind_address,
-                port=options.http_server_bind_port)
+                port=options.http_server_bind_port,
+                # access_log=_setup_access_log(options=options)
+                )
 
 
 async def run_app(options=None):
@@ -133,9 +135,26 @@ async def run_app(options=None):
     return main_app
 
 
+def _setup_access_log(options=None):
+    formatter = logging.Formatter("%(message)s")
+    Path(options.http_access_log_file).parent.mkdir(
+        parents=True, exist_ok=True)
+    file_handler = RotatingFileHandler(options.http_access_log_file, mode='a',
+                                       maxBytes=options.http_access_log_max_bytes,
+                                       backupCount=options.http_access_log_backup_count,
+                                       encoding=None, delay=0)
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(logging.DEBUG)
+
+    access_log = logging.getLogger("aiohttp.access")
+    access_log.setLevel(logging.DEBUG)
+    access_log.addHandler(file_handler)
+    return access_log
+
+
 def _setup_logging(options=None):
     formatter = logging.Formatter(
-        "%(asctime)s;%(levelname)s;%(name)s;%(message)s ")
+        "%(asctime)s;%(levelname)s;%(name)s;%(message)s")
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(formatter)
     if options.verbose:
@@ -212,6 +231,13 @@ def _get_options():
           default=pkg_resources.resource_filename('riego.web', 'templates'))
     p.add('--websocket_path', help='url path for websocket',
           default="/ws")
+    p.add('--http_access_log_file', help='Full path to access logfile',
+          default='log/access.log')
+    p.add('--http_access_log_max_bytes', help='Maximum access log size in bytes',
+          default=1024*300, type=int)
+    p.add('--http_access_log_backup_count', help='How many files to rotate',
+          default=3, type=int)
+
 # Memcache
     p.add('--memcached_host', help='IP adress of memcached host',
           default='127.0.0.1')
