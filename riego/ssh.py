@@ -1,6 +1,7 @@
 import asyncssh
 import asyncio
 import aiohttp
+from aiohttp import ClientError
 
 
 from logging import getLogger
@@ -53,20 +54,24 @@ class Ssh:
                 continue
             ssh_user_key = asyncssh.import_private_key(
                 self._parameters.ssh_user_key)
-            async with asyncssh.connect(
-                    self._parameters.ssh_server_hostname,
-                    port=self._parameters.ssh_server_port,
-                    username=self._parameters.cloud_identifier,
-                    client_keys=ssh_user_key,
-                    known_hosts=self._options.ssh_known_hosts) as self._conn:
-
-                self._listener = await self._conn.forward_remote_port(
-                    'localhost',  # Bind to localhost on remote Server
-                    self._parameters.ssh_server_listen_port,
-                    'localhost',
-                    self._options.http_server_bind_port)
-                await self._listener.wait_closed()
-            await asyncio.sleep(3)
+            try:
+                async with asyncssh.connect(
+                        self._parameters.ssh_server_hostname,
+                        port=int(self._parameters.ssh_server_port),
+                        username=self._parameters.cloud_identifier,
+                        client_keys=ssh_user_key,
+                        known_hosts=self._options.ssh_known_hosts
+                ) as self._conn:
+                    self._listener = await self._conn.forward_remote_port(
+                        'localhost',  # Bind to localhost on remote Server
+                        int(self._parameters.ssh_server_listen_port),
+                        'localhost',
+                        int(self._options.http_server_bind_port)
+                    )
+                    await self._listener.wait_closed()
+            except Exception as e:
+                _log.debug(f'SSH-Exception: {e}')
+            await asyncio.sleep(10)
 
     async def _shutdown(self, app, task) -> None:
         _log.debug('Ssh Engine shutdown called')
@@ -86,12 +91,18 @@ class Ssh:
         data = {'cloud_identifier': self._parameters.cloud_identifier,
                 'public_user_key': public_user_key}
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(self._options.cloud_api_url,
-                                    json=data) as resp:
-                if resp.status != 200:
-                    return
-                data = await resp.json()
-        self._parameters.ssh_server_hostname = data['ssh_server_hostname']  # noqa: E501
-        self._parameters.ssh_server_port = data['ssh_server_port']
-        self._parameters.ssh_server_listen_port = data['ssh_server_listen_port']  # noqa: E501
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(self._options.cloud_api_url,
+                                        json=data) as resp:
+                    if resp.status != 200:
+                        return
+                    data = await resp.json()
+        except ClientError as e:
+            _log.debug(f'Unable to access remote api: {e}')
+            return False
+        else:
+            self._parameters.ssh_server_hostname = data['ssh_server_hostname']  # noqa: E501
+            self._parameters.ssh_server_port = data['ssh_server_port']
+            self._parameters.ssh_server_listen_port = data['ssh_server_listen_port']  # noqa: E501
+            return True

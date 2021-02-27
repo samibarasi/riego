@@ -37,7 +37,7 @@ class Parameters:
         self._smtp_password = options.parameters_smtp_password
         self._smtp_from = options.parameters_smtp_from
 
-        self._cloud_identifier = None
+        self._cloud_identifier = secrets.token_urlsafe(12)
 
         self._ssh_server_hostname = None
         self._ssh_server_port = None
@@ -129,7 +129,7 @@ class Parameters:
 
     @property
     def ssh_server_port(self):
-        return self._ssh_server_port
+        return int(self._ssh_server_port)
 
     @ssh_server_port.setter
     def ssh_server_port(self, value):
@@ -138,7 +138,7 @@ class Parameters:
 
     @property
     def ssh_server_listen_port(self):
-        return self._ssh_server_listen_port
+        return int(self._ssh_server_listen_port)
 
     @ssh_server_listen_port.setter
     def ssh_server_listen_port(self, value):
@@ -156,10 +156,6 @@ class Parameters:
 
     @property
     def cloud_identifier(self):
-        if self._cloud_identifier is None:
-            self._cloud_identifier = secrets.token_urlsafe(12)
-            self._update_value_by_key(key="cloud_identifier",
-                                      value=self._cloud_identifier)
         return self._cloud_identifier
 
     @cloud_identifier.setter
@@ -186,11 +182,9 @@ class Parameters:
         return ret
 
     def _load_all(self):
-        c = self._db_conn.cursor()
-        c.execute("SELECT * from parameters")
-        items = c.fetchall()
-        self._db_conn.commit()
-        for item in items:
-            attr_name = "_" + item['key']
-            if getattr(self, attr_name, None) is not None:
-                setattr(self, attr_name, item['value'])
+        cursor = self._db_conn.cursor()
+        cursor.execute("SELECT * from parameters")
+        for row in cursor:
+            attr_name = "_" + row['key']
+            setattr(self, attr_name, row['value'])
+
