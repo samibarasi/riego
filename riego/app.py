@@ -139,10 +139,11 @@ def _setup_access_log(options=None):
     formatter = logging.Formatter("%(message)s")
     Path(options.http_access_log_file).parent.mkdir(
         parents=True, exist_ok=True)
-    file_handler = RotatingFileHandler(options.http_access_log_file, mode='a',
-                                       maxBytes=options.http_access_log_max_bytes,
-                                       backupCount=options.http_access_log_backup_count,
-                                       encoding=None, delay=0)
+    file_handler = RotatingFileHandler(
+        options.http_access_log_file, mode='a',
+        maxBytes=options.http_access_log_max_bytes,
+        backupCount=options.http_access_log_backup_count,
+        encoding=None, delay=0)
     file_handler.setFormatter(formatter)
     file_handler.setLevel(logging.DEBUG)
 
@@ -233,7 +234,7 @@ def _get_options():
           default="/ws")
     p.add('--http_access_log_file', help='Full path to access logfile',
           default='log/access.log')
-    p.add('--http_access_log_max_bytes', help='Maximum access log size in bytes',
+    p.add('--http_access_log_max_bytes', help='Maximum file size in bytes',
           default=1024*300, type=int)
     p.add('--http_access_log_backup_count', help='How many files to rotate',
           default=3, type=int)
