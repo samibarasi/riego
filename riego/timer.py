@@ -101,7 +101,7 @@ class Timer():
         """
         If we had some action, we return True
         """
-        _log.debug("check_to_switch_off for id: {}".format(valve['id']))
+        #_log.debug("check_to_switch_off for id: {}".format(valve['id']))
         if self._options.enable_timer_dev_mode:
             td = timedelta(minutes=0, seconds=valve['duration'])
         else:
@@ -118,7 +118,7 @@ class Timer():
         """
         If we had some action, we return True
         """
-        _log.debug("check_to_switch_on for id: {}".format(valve['id']))
+        #_log.debug("check_to_switch_on for id: {}".format(valve['id']))
         if self._options.enable_timer_dev_mode:
             td = timedelta(days=0, seconds=valve['interval'])
         else:

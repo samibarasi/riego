@@ -28,12 +28,10 @@ cp -a /var/lib/mosquitto /mnt/usb1/
 sudo systemctl enable mosquitto.service
 sudo systemctl restart mosquitto.service
 
-adduser --system --group --home /mnt/usb1/riego riego
-chown riego.riego /mnt/usb1/riego
+adduser --system --group --home /mnt/usb1/riego --shell /bin/bash riego
+echo "source .venv/bin/activate" >/mnt/usb1/riego/.profile
+chown -R riego.riego /mnt/usb1/riego
 chmod 2775 /mnt/usb1/riego
-adduser stephan riego
-
-
 
 
 cd /mnt/usb1/riego
