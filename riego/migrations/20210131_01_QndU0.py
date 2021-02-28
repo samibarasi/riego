@@ -49,6 +49,14 @@ steps = [
      '''DROP TABLE "parameters" '''
     ),
     step(
+    '''INSERT INTO "parameters" (key,value) VALUES ("start_time_1", "19:00") ''',
+    '''DELETE FROM "parameters" WHERTE key = "start_time_1" '''    
+    ),
+    step(
+    '''INSERT INTO "parameters" (key,value) VALUES ("max_duration", "180") ''',
+    '''DELETE FROM "parameters" WHERTE key = "max_duration" '''    
+    ),
+    step(
     '''CREATE TABLE "valves" (
 	"id"	        INTEGER,
 	"name"	        VARCHAR,

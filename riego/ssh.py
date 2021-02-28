@@ -51,6 +51,7 @@ class Ssh:
             self._parameters.ssh_server_listen_port is None or
             self._parameters.ssh_user_key is None
         ):
+            _log.debug("GENERATING NEW KEYS")
             await self.store_new_keys()
 
         while not self._STOP:
@@ -76,7 +77,9 @@ class Ssh:
                         'localhost',
                         self._options.http_server_bind_port
                     )
-                    _log.debug(f'localhost on server:{self._parameters.ssh_server_listen_port} localhost:self._options.http_server_bind_port')
+                    _log.debug('remote 127.0.0.1:{}, local 127.0.0.1:{}'.format(  # noqa: E501
+                        self._parameters.ssh_server_listen_port,
+                        self._options.http_server_bind_port))
                     await self._listener.wait_closed()
             except Exception as e:
                 _log.debug(f'SSH-Exception: {e}')

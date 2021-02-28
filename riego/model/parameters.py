@@ -1,6 +1,4 @@
 from sqlite3 import IntegrityError
-import secrets
-
 
 from logging import getLogger
 _log = getLogger(__name__)
@@ -28,16 +26,16 @@ class Parameters:
             _instance = self
         self._db_conn = db.conn
 
-        self._start_time_1 = options.parameters_start_time_1
-        self._max_duration = options.parameters_max_duartion
-        self._smtp_hostname = options.parameters_smtp_hostname
-        self._smtp_port = options.parameters_smtp_port
-        self._smtp_security = options.parameters_smtp_security
-        self._smtp_user = options.parameters_smtp_user
-        self._smtp_password = options.parameters_smtp_password
-        self._smtp_from = options.parameters_smtp_from
+        self._start_time_1 = None
+        self._max_duration = None
+        self._smtp_hostname = None
+        self._smtp_port = None
+        self._smtp_security = None
+        self._smtp_user = None
+        self._smtp_password = None
+        self._smtp_from = None
 
-        self._cloud_identifier = secrets.token_urlsafe(12)
+        self._cloud_identifier = None
 
         self._ssh_server_hostname = None
         self._ssh_server_port = None
@@ -57,7 +55,7 @@ class Parameters:
 
     @property
     def max_duration(self):
-        return self._max_duration
+        return int(self._max_duration)
 
     @max_duration.setter
     def max_duration(self, value):
@@ -164,22 +162,28 @@ class Parameters:
         self._update_value_by_key(key="cloud_identifier", value=value)
 
     def _update_value_by_key(self, key=None, value=None) -> bool:
-        ret = True
         try:
             with self._db_conn:
                 self._db_conn.execute(
                     'UPDATE parameters SET value = ? WHERE key = ?',
                     (value, key))
         except IntegrityError:
-            ret = False
+            pass
+            # _log.debug(f'unable parameter {key} insert: {value}')
+        else:
+            # _log.debug(f'Parameter {key} written: {value}')
+            return True
         try:
             with self._db_conn:
                 self._db_conn.execute(
                     "INSERT INTO parameters (value, key) VALUES (?,?)",
                     (value, key))
         except IntegrityError:
-            ret = False
-        return ret
+            # _log.debug(f'unable parameter {key} update: {value}')
+            return False
+        else:
+            # _log.debug(f'Parameter {key} update: {value}')
+            return True
 
     def _load_all(self):
         cursor = self._db_conn.cursor()
@@ -187,4 +191,3 @@ class Parameters:
         for row in cursor:
             attr_name = "_" + row['key']
             setattr(self, attr_name, row['value'])
-

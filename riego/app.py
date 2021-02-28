@@ -5,7 +5,7 @@ import os
 import sys
 from pathlib import Path
 import socket
-
+import secrets
 
 import logging
 from logging.handlers import RotatingFileHandler
@@ -89,14 +89,14 @@ async def run_app(options=None):
     db = setup_db(options=options)
     websockets = setup_websockets(app=app, db=db, options=options)
     parameters = setup_parameters(app=app, db=db, options=options)
-    setup_ssh(app=app, parameters=parameters, options=options)
     mqtt = setup_mqtt(app=app, options=options)
     setup_boxes(options=options, db=db, mqtt=mqtt)
     valves = setup_valves(options=options, db=db,
                           mqtt=mqtt, websockets=websockets)
     setup_timer(app=app, options=options, db=db,
                 mqtt=mqtt, valves=valves, parameters=parameters)
-
+    setup_ssh(app=app, parameters=parameters, options=options)
+    
     mcache = aiomcache.Client(options.memcached_host, options.memcached_port)
     session_setup(app, MemcachedStorage(mcache))
 
@@ -123,6 +123,9 @@ async def run_app(options=None):
 
 # Put app as subapp under main_app and create an approbiate redirection
     main_app = web.Application()
+
+    if parameters.cloud_identifier is None:
+        parameters.cloud_identifier = secrets.token_urlsafe(12)
 
     async def main_app_handler(request):
         raise web.HTTPSeeOther(f'/{parameters.cloud_identifier}/')
@@ -334,15 +337,16 @@ def _get_options():
 
 
 def _reset_admin(options):
-    from riego.web.security import password_hash
     from sqlite3 import IntegrityError
     from riego.db import setup_db
+    import bcrypt
 
     db = setup_db(options=options)
     password = options.reset_admin
 
     if len(password) > 0:
-        password = password_hash(password.encode('utf-8'))
+        password = password.encode('utf-8')
+        password = bcrypt.hashpw(password, bcrypt.gensalt(12))
         try:
             with db.conn:
                 db.conn.execute(

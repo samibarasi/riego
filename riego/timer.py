@@ -30,6 +30,7 @@ class Timer():
     def __init__(self, app=None, options=None,
                  db=None, mqtt=None,
                  parameters=None, valves=None):
+
         self._options = options
         self._db_conn = db.conn
         self._mqtt = mqtt
@@ -101,7 +102,7 @@ class Timer():
         """
         If we had some action, we return True
         """
-        #_log.debug("check_to_switch_off for id: {}".format(valve['id']))
+        # _log.debug("check_to_switch_off for id: {}".format(valve['id']))
         if self._options.enable_timer_dev_mode:
             td = timedelta(minutes=0, seconds=valve['duration'])
         else:
@@ -118,7 +119,7 @@ class Timer():
         """
         If we had some action, we return True
         """
-        #_log.debug("check_to_switch_on for id: {}".format(valve['id']))
+        # _log.debug("check_to_switch_on for id: {}".format(valve['id']))
         if self._options.enable_timer_dev_mode:
             td = timedelta(days=0, seconds=valve['interval'])
         else:
@@ -147,14 +148,17 @@ class Timer():
         self._stop = True
 
     async def _is_running_period(self) -> datetime:
-        """Return current Shedule Datetime if we have raining times
+        """Return current the sheduled "Datetime" if we have raining times
 
         :return: [description]
         :rtype: datetime
         """
-        max_duration = self._parameters.max_duration
-        start_time_1 = self._parameters.start_time_1
-        start_hour, start_minute = start_time_1.split(':')
+        if self._parameters.start_time_1 is None:
+            self._parameters.start_time_1 = self._options.parameters_start_time_1  # noqa: E501
+        if self._parameters_max_duration is None:
+            self._parameters.max_duration = self._options.parameters_max_duartion  # noqa: E501
+
+        start_hour, start_minute = self._parameters.start_time_1.split(':')
 
         if self._running_period_start is None:
             self._running_period_start = datetime.now().replace(
@@ -167,7 +171,7 @@ class Timer():
 
         if self._running_period_end is None:
             self._running_period_end = self._running_period_start + \
-                timedelta(minutes=int(max_duration))
+                timedelta(minutes=self._parameters.max_duration)
 
         if datetime.now() > self._running_period_end:
             self._running_period_start = None
