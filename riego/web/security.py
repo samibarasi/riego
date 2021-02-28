@@ -51,7 +51,12 @@ async def login_apply(request: web.Request):
                     WHERE identity = ?""", (form['identity'],))
     user = cursor.fetchone()
 
-    if user is None or user['is_disabled'] or not len(user['password']):
+    if (
+        user is None or
+        user['is_disabled'] or
+        user['password'] is None or
+        not len(user['password'])
+    ):
         await asyncio.sleep(2)
         raise web.HTTPSeeOther(request.app.router['login'].url_for())
     if not bcrypt.checkpw(form['password'].encode('utf-8'), user['password']):
