@@ -153,9 +153,9 @@ class Timer():
         :rtype: datetime
         """
         if self._parameters.start_time_1 is None:
-            self._parameters.start_time_1 = self._options.parameters_start_time_1  # noqa: E501
+            self._parameters.start_time_1 = self._options.parameters.start_time_1  # noqa: E501
         if self._parameters_max_duration is None:
-            self._parameters.max_duration = self._options.parameters_max_duartion  # noqa: E501
+            self._parameters.max_duration = self._options.parameters.max_duartion  # noqa: E501
 
         start_hour, start_minute = self._parameters.start_time_1.split(':')
 
