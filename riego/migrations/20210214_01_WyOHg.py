@@ -25,8 +25,8 @@ steps = [
     ),
     step(
     '''INSERT INTO "users"
-    ("identity","password","is_superuser")
-    VALUES ("admin","$2b$12$SsmDaUnej3koYln39Dq9Ue2VBjYd.FyGMeAV9kK3edRjAzLztIaCC",1)''',
+    ("identity","is_superuser")
+    VALUES ("admin",1)''',
       '''DELETE FROM users WHERE identity = "admin" '''
     ),
     step(

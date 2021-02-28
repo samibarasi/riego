@@ -337,7 +337,6 @@ def _get_options():
 
 
 def _reset_admin(options):
-    from sqlite3 import IntegrityError
     from riego.db import setup_db
     import bcrypt
 
@@ -347,14 +346,13 @@ def _reset_admin(options):
     if len(password) > 0:
         password = password.encode('utf-8')
         password = bcrypt.hashpw(password, bcrypt.gensalt(12))
-        try:
-            with db.conn:
-                db.conn.execute(
-                    '''UPDATE users
+        cursor = db.conn.cursor()
+        cursor.execute('''UPDATE users
                         SET password = ?
                         WHERE id = ? ''', (password, 1))
-        except IntegrityError as e:
-            print(f'Unable to reset Admin PW: {e}')
-        else:
+        db.conn.commit()
+        if cursor.rowcount == 1:
             print(f'Succesfully reset Admin PW: {password}')
+        else:
+            print('Unable to reset Admin PW:')
     db.conn.close()

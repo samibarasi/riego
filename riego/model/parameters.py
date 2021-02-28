@@ -162,27 +162,25 @@ class Parameters:
         self._update_value_by_key(key="cloud_identifier", value=value)
 
     def _update_value_by_key(self, key=None, value=None) -> bool:
-        try:
-            with self._db_conn:
-                self._db_conn.execute(
-                    'UPDATE parameters SET value = ? WHERE key = ?',
-                    (value, key))
-        except IntegrityError:
-            pass
-            # _log.debug(f'unable parameter {key} insert: {value}')
-        else:
-            # _log.debug(f'Parameter {key} written: {value}')
+        cursor = self._db_conn.cursor()
+        cursor.execute('''UPDATE parameters SET
+                        value = ?
+                        WHERE key = ?''', (value, key))
+        self._db_conn.commit()
+        if cursor.rowcount == 1:
+            _log.debug(f'Parameter {key} update: {value}')
             return True
+        _log.debug(f'unable parameter {key} update: {value}')
         try:
-            with self._db_conn:
-                self._db_conn.execute(
-                    "INSERT INTO parameters (value, key) VALUES (?,?)",
-                    (value, key))
+            cursor.execute('''INSERT INTO parameters
+                            (value, key)
+                            VALUES (?,?)''', (value, key))
+            self._db_conn.commit()
         except IntegrityError:
-            # _log.debug(f'unable parameter {key} update: {value}')
+            _log.debug(f'unable parameter {key} insert: {value}')
             return False
         else:
-            # _log.debug(f'Parameter {key} update: {value}')
+            _log.debug(f'Parameter {key} insert: {value}')
             return True
 
     def _load_all(self):

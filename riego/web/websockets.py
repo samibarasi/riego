@@ -104,6 +104,7 @@ class Websockets():
                     WHERE sequence = ?''', (sequence,))
         item = cursor.fetchone()
         if item is None:
+            _log.error(f"Websocket-Auth: unknown {sequence},{token}")
             await asyncio.sleep(3)
             return False
 

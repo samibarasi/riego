@@ -153,19 +153,18 @@ class Boxes():
         fallback_topic = payload.get('FallbackTopic', '')
         group_topic = payload.get('GroupTopic', '')
 
-        try:
-            with self._db_conn:
-                self._db_conn.execute(
-                    """UPDATE boxes
+        cursor = self._db_conn.cursor()
+        cursor.execute("""UPDATE boxes
                     SET hw_type = ?, hw_version = ?,
                     sw_type= ?, sw_version = ?,
                     fallback_topic = ?, group_topic = ?
                     WHERE id = ?""",
                     (hw_type, hw_version, sw_type, sw_version,
                      fallback_topic, group_topic, box_id))
-        except IntegrityError:
-            # _log.debug(f'unable to Update MQTT INFO1:{e}')
-            pass
+        self._db_conn.commit()
+        if cursor.rowcount < 1:
+            _log.debug(f'unable to Update MQTT INFO1:{e}')
+            return False
         return True
 
     async def _mqtt_info2_handler(self, topic: str, payload: str) -> bool:
@@ -190,16 +189,15 @@ class Boxes():
         hostname = payload.get('Hostname', '')
         ip_address = payload.get('IPAddress', '')
 
-        try:
-            with self._db_conn:
-                self._db_conn.execute(
-                    """UPDATE boxes
+        cursor = self._db_conn.cursor()
+        cursor.execute("""UPDATE boxes
                     SET hostname = ?, ip_address = ?
                     WHERE id = ?""",
                     (hostname, ip_address, box_id))
-        except IntegrityError:
-            # _log.debug(f'Unable to update MQTT INFO2:{e}')
-            pass
+        self._db_conn.commit()
+        if cursor.rowcount < 1:
+            _log.debug(f'unable to Update MQTT INFO2:{e}')
+            return False
         return True
 
     async def _get_box_id_by_topic(self, topic=None):

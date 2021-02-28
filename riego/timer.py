@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 import asyncio
-from sqlite3 import IntegrityError
 import logging
 
 
@@ -130,14 +129,14 @@ class Timer():
                 current_shedule_datetime is not None):
             # Intervall erreicht
             await self._valves.set_on_try(valve['id'])
-            try:
-                with self._db_conn:
-                    self._db_conn.execute(
-                        """UPDATE valves SET last_shedule = ? WHERE id = ? """,
-                        (current_shedule_datetime, valve['id']))
-            except IntegrityError as e:
-                pass
-                _log.error(f'update for last_shedule failed: {e}')
+            cursor = self._db_conn.cursor()
+            cursor.execute("""UPDATE valves SET
+                            last_shedule = ?
+                            WHERE id = ? """,
+                           (current_shedule_datetime, valve['id']))
+            self._db_conn.commit()
+            if cursor.rowcount < 1:
+                _log.error('update for last_shedule failed')
                 return False
             _log.debug('valveOn: {}'.format(valve['name']))
             return True
