@@ -26,21 +26,25 @@
 {% if cloud_url is defined %}
     <h2>Cloud</h2>
     {% if cloud_url is none %}
-        <p>
-            Die Cloud ist nicht eingerichtet
-        </p>
-        <form action="{{url('system_create_cloud') }}" method="POST"
-        enctype="multipart/form-data">
-        <input name="csrf_token" type="hidden" value="{{csrf_token}}">
-        <input type="submit">
-        </form>
+    <p>
+        Cloud ist nicht verbunden
+    </p>
     {% else %}
+    <p>
         Die Cloud ist unter <a href="{{cloud_url}}" target="_parent">{{cloud_url}}</a> erreichbar.
+    </p>
     {% endif %}
+
+    <form action="{{url('system_cloud') }}" method="POST"
+    enctype="multipart/form-data">
+    <input name="csrf_token" type="hidden" value="{{csrf_token}}">
+    <input type="submit">
+    </form>
+
 
 {% else %}
 <p>
-    <a href="{{url('system_check_cloud')}}">Check Cloud</a>
+    <a href="{{url('system_cloud')}}">Check Cloud</a>
 </p>
 {% endif %}
 
