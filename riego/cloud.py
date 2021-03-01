@@ -10,20 +10,20 @@ _log = getLogger(__name__)
 _instance = None
 
 
-def get_ssh():
+def get_cloud():
     global _instance
     return _instance
 
 
-def setup_ssh(app=None, options=None, parameters=None):
+def setup_cloud(app=None, options=None, parameters=None):
     global _instance
     if _instance is not None:
         del _instance
-    _instance = Ssh(app=app, options=options, parameters=parameters)
+    _instance = Cloud(app=app, options=options, parameters=parameters)
     return _instance
 
 
-class Ssh:
+class Cloud:
     def __init__(self, app=None, options=None, parameters=None):
         global _instance
         if _instance is None:
@@ -45,14 +45,6 @@ class Ssh:
         _log.debug('Ssh Engine startup called')
 
 # TODO move the following code to Web-Interface
-        if (
-            self._parameters.ssh_server_hostname is None or
-            self._parameters.ssh_server_port is None or
-            self._parameters.ssh_server_listen_port is None or
-            self._parameters.ssh_user_key is None
-        ):
-            _log.debug("GENERATING NEW KEYS")
-            await self.store_new_keys()
 
         while not self._STOP:
             if (self._parameters.ssh_server_hostname is None or
@@ -95,7 +87,7 @@ class Ssh:
 #            await self._conn.wait_closed()
         return None
 
-    async def store_new_keys(self):
+    async def create_cloud(self):
         key = asyncssh.generate_private_key(self._options.ssh_key_algorithm)
         self._parameters.ssh_user_key = key.export_private_key()
         public_user_key = key.export_public_key().decode('ascii')
@@ -118,3 +110,17 @@ class Ssh:
             self._parameters.ssh_server_port = data['ssh_server_port']
             self._parameters.ssh_server_listen_port = data['ssh_server_listen_port']  # noqa: E501
             return True
+
+    async def check_cloud(self):
+        if (
+            self._parameters.ssh_server_hostname is None or
+            self._parameters.ssh_server_port is None or
+            self._parameters.ssh_server_listen_port is None or
+            self._parameters.ssh_user_key is None
+        ):
+            return None
+        else:
+            url = 'https://{}/{}/'.format(
+                       self._parameters.ssh_server_hostname,
+                       self._parameters.cloud_identifier)
+            return url

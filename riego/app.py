@@ -12,7 +12,7 @@ from logging.handlers import RotatingFileHandler
 
 from riego.db import setup_db
 from riego.mqtt import setup_mqtt
-from riego.ssh import setup_ssh
+from riego.cloud import setup_cloud
 from riego.boxes import setup_boxes
 from riego.valves import setup_valves
 from riego.timer import setup_timer
@@ -95,7 +95,7 @@ async def run_app(options=None):
                           mqtt=mqtt, websockets=websockets)
     setup_timer(app=app, options=options, db=db,
                 mqtt=mqtt, valves=valves, parameters=parameters)
-    setup_ssh(app=app, parameters=parameters, options=options)
+    setup_cloud(app=app, parameters=parameters, options=options)
     
     mcache = aiomcache.Client(options.memcached_host, options.memcached_port)
     session_setup(app, MemcachedStorage(mcache))
@@ -240,7 +240,6 @@ def _get_options():
           default=1024*300, type=int)
     p.add('--http_access_log_backup_count', help='How many files to rotate',
           default=3, type=int)
-
 # Memcache
     p.add('--memcached_host', help='IP adress of memcached host',
           default='127.0.0.1')

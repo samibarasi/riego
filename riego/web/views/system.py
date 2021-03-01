@@ -1,12 +1,15 @@
 import aiohttp_jinja2
 from aiohttp import web
+from aiohttp_session import get_session
 
 from riego.model.parameters import get_parameters
 from riego.web.security import raise_permission
+from riego.cloud import get_cloud
 
 import asyncio
 import sys
 import json
+import secrets
 
 from riego.__init__ import __version__
 from pkg_resources import packaging
@@ -30,6 +33,30 @@ async def system_index(request):
         text = text.format(__version__, installed_version)
 
     return {"text": text}
+
+
+@router.get("/system/cloud", name='system_cloud')
+@aiohttp_jinja2.template('system/index.html')
+async def system_check_cloud(request):
+    await raise_permission(request, permission=None)
+    cloud = get_cloud()
+    cloud_url = await cloud.check_cloud()
+    return {'cloud_url': cloud_url}
+
+
+@router.post("/system/cloud")
+@aiohttp_jinja2.template('system/index.html')
+async def system_create_cloud(request):
+    await raise_permission(request, permission=None)
+    csrf_token = secrets.token_urlsafe()
+    session = await get_session(request)
+    session['csrf_token'] = csrf_token
+    cloud = get_cloud()
+    if await cloud.create_cloud():
+        raise web.HTTPSeeOther(
+            request.app.router['system_cloud'].url_for())
+    text = "Failed to create cloud connection"
+    return {'text':  text}
 
 
 @router.get("/system/check_update", name='system_check_update')

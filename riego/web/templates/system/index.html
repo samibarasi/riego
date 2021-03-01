@@ -7,19 +7,46 @@
 {% block content %}
 
 
-
+{% if text is defined %}
 <div id='test'>
   <pre>
     {{text}}
   </pre>
-
-  <p>
-    {% if user is not none %}
-    Mittels {{user['provider']}} angemeldet als: {{user['identity']}}
-    {% endif %}
-  </p>
-
 </div>
+
+{% endif %}
+
+{% if user is not none %}
+    <p>
+       Mittels {{user['provider']}} angemeldet als: {{user['identity']}}
+    </p>
+{% endif %}
+
+
+{% if cloud_url is defined %}
+    <h2>Cloud</h2>
+    {% if cloud_url is none %}
+        <p>
+            Die Cloud ist nicht eingerichtet
+        </p>
+        <form action="{{url('system_create_cloud') }}" method="POST"
+        enctype="multipart/form-data">
+        <input name="csrf_token" type="hidden" value="{{csrf_token}}">
+        <input type="submit">
+        </form>
+    {% else %}
+        Die Cloud ist unter <a href="{{cloud_url}}" target="_parent">{{cloud_url}}</a> erreichbar.
+    {% endif %}
+
+{% else %}
+<p>
+    <a href="{{url('system_check_cloud')}}">Check Cloud</a>
+</p>
+{% endif %}
+
+
+
+
 
 
 <p>

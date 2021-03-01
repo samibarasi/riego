@@ -22,7 +22,7 @@ def setup_routes_security(app):
 
 
 @router.get("/login", name='login')
-@aiohttp_jinja2.template("users/login.html")
+@aiohttp_jinja2.template("security/login.html")
 async def login(request: web.Request):
     redirect = request.rel_url.query.get("redirect", "")
     csrf_token = secrets.token_urlsafe()
@@ -112,7 +112,7 @@ async def logout(request: web.Request):
 
 
 @ router.get("/passwd", name='passwd')
-@ aiohttp_jinja2.template("users/passwd.html")
+@ aiohttp_jinja2.template("security/passwd.html")
 async def passwd(request: web.Request):
     return {}
 
