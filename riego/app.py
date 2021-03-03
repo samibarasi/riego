@@ -344,7 +344,8 @@ def _reset_admin(options):
 
     if len(password) > 0:
         password = password.encode('utf-8')
-        password = bcrypt.hashpw(password, bcrypt.gensalt(12))
+        password = bcrypt.hashpw(password, bcrypt.gensalt())
+        password = password.decode('utf-8')
         cursor = db.conn.cursor()
         cursor.execute('''UPDATE users
                         SET password = ?

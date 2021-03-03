@@ -59,7 +59,7 @@ async def login_apply(request: web.Request):
     ):
         await asyncio.sleep(2)
         raise web.HTTPSeeOther(request.app.router['login'].url_for())
-    if not bcrypt.checkpw(form['password'].encode('utf-8'), user['password']):
+    if not bcrypt.checkpw(form['password'].encode('utf-8'), user['password'].encode('utf-8')):
         await asyncio.sleep(2)
         raise web.HTTPSeeOther(request.app.router['login'].url_for())
 
@@ -124,7 +124,8 @@ async def passwd_apply(request: web.Request):
 
 # TODO check old_password and equality of pw1 an pw2
     password = form['new_password_1'].encode('utf-8')
-    password = bcrypt.hashpw(password, bcrypt.gensalt(12))
+    password = bcrypt.hashpw(password, bcrypt.gensalt())
+    password = password.decode('utf-8')
     try:
         with get_db().conn:
             get_db().conn.execute(
