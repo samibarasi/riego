@@ -46,7 +46,7 @@ async def login_apply(request: web.Request):
         raise web.HTTPSeeOther(request.app.router['login'].url_for())
 
     cursor = get_db().conn.cursor()
-    cursor.execute("""SELECT *, 'login' AS 'provider'
+    cursor.execute("""SELECT *, 'login' AS provider
                     FROM users
                     WHERE identity = ?""", (form['identity'],))
     user = cursor.fetchone()
@@ -59,7 +59,8 @@ async def login_apply(request: web.Request):
     ):
         await asyncio.sleep(2)
         raise web.HTTPSeeOther(request.app.router['login'].url_for())
-    if not bcrypt.checkpw(form['password'].encode('utf-8'), user['password'].encode('utf-8')):
+    if not bcrypt.checkpw(form['password'].encode('utf-8'),
+                          user['password'].encode('utf-8')):
         await asyncio.sleep(2)
         raise web.HTTPSeeOther(request.app.router['login'].url_for())
 
@@ -153,7 +154,7 @@ async def get_user(request) -> Row:
     user_id = session.get('user_id')
     if user_id is not None:
         cursor = db.conn.cursor()
-        cursor.execute("""SELECT *, 'login' AS 'provider'
+        cursor.execute("""SELECT *, 'login' AS provider
                           FROM users
                           WHERE id = ?""", (user_id,))
         user = cursor.fetchone()
@@ -306,7 +307,7 @@ async def check_remember_me_auth(request) -> Row:
     remember_me = request.cookies.get('remember_me')
     if remember_me is not None:
         cursor = db.conn.cursor()
-        cursor.execute("""SELECT *, 'cookie' AS 'provider'
+        cursor.execute("""SELECT *, 'cookie' AS provider
                            FROM users
                            WHERE remember_me = ?""", (remember_me,))
         user = cursor.fetchone()
