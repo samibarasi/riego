@@ -4,6 +4,7 @@ from aiohttp import web
 
 from sqlite3 import IntegrityError
 from riego.db import get_db
+from riego.web.security import raise_permission
 
 from logging import getLogger
 _log = getLogger(__name__)
@@ -18,7 +19,7 @@ def setup_routes_valves(app):
 @router.get("/valves", name='valves')
 @aiohttp_jinja2.template("valves/index.html")
 async def index(request: web.Request) -> Dict[str, Any]:
-    await request.app['security'].raise_permission(request, permission="")
+    await raise_permission(request, permission="")
     cursor = get_db().conn.cursor()
     cursor.execute('SELECT * FROM valves')
     items = cursor.fetchall()
@@ -29,13 +30,13 @@ async def index(request: web.Request) -> Dict[str, Any]:
 @router.get("/valves/new", name='valves_new')
 @aiohttp_jinja2.template("valves/new.html")
 async def new(request: web.Request) -> Dict[str, Any]:
-    await request.app['security'].raise_permission(request, permission="")
+    await raise_permission(request, permission="")
     return {}
 
 
 @router.post("/valves/new")
 async def new_apply(request: web.Request) -> Dict[str, Any]:
-    await request.app['security'].raise_permission(request, permission="")
+    await raise_permission(request, permission="")
     item = await request.post()
     try:
         with get_db().conn:
@@ -57,7 +58,7 @@ async def new_apply(request: web.Request) -> Dict[str, Any]:
 @router.get("/valves/{item_id}", name='valves_item_view')
 @aiohttp_jinja2.template("valves/view.html")
 async def view(request: web.Request) -> Dict[str, Any]:
-    await request.app['security'].raise_permission(request, permission="")
+    await raise_permission(request, permission="")
     item_id = request.match_info["item_id"]
     cursor = get_db().conn.cursor()
     cursor.execute('''SELECT valves.*,
@@ -75,7 +76,7 @@ async def view(request: web.Request) -> Dict[str, Any]:
 @router.get("/valves/{item_id}/edit", name='valves_item_edit')
 @aiohttp_jinja2.template("valves/edit.html")
 async def edit(request: web.Request) -> Dict[str, Any]:
-    await request.app['security'].raise_permission(request, permission="")
+    await raise_permission(request, permission="")
     item_id = request.match_info["item_id"]
     cursor = get_db().conn.cursor()
     cursor.execute('SELECT * FROM valves WHERE id=?', (item_id,))
@@ -88,7 +89,7 @@ async def edit(request: web.Request) -> Dict[str, Any]:
 
 @router.post("/valves/{item_id}/edit")
 async def edit_apply(request: web.Request) -> web.Response:
-    await request.app['security'].raise_permission(request, permission="")
+    await raise_permission(request, permission="")
     item_id = request.match_info["item_id"]
     item = await request.post()
     try:
@@ -116,7 +117,7 @@ async def edit_apply(request: web.Request) -> web.Response:
 
 @router.get("/valves/{item_id}/delete", name='valves_item_delete')
 async def delete(request: web.Request) -> web.Response:
-    await request.app['security'].raise_permission(request, permission="")
+    await raise_permission(request, permission="")
     item_id = request.match_info["item_id"]
     try:
         with get_db().conn:

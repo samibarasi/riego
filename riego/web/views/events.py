@@ -2,6 +2,8 @@ import aiohttp_jinja2
 from aiohttp import web
 
 from riego.db import get_db
+from riego.web.security import raise_permission
+
 
 router = web.RouteTableDef()
 
@@ -13,7 +15,7 @@ def setup_routes_events(app):
 @router.get("/events", name='events')
 @aiohttp_jinja2.template('events/index.html')
 async def event_index(request):
-    await request.app['security'].raise_permission(request, permission=None)
+    await raise_permission(request, permission=None)
     cursor = get_db().conn.cursor()
     cursor.execute('''SELECT events.*, valves.name
                 FROM events, valves
@@ -27,7 +29,7 @@ async def event_index(request):
 @router.get("/events/{item_id}/filter", name='events_item_filter')
 @aiohttp_jinja2.template('events/index.html')
 async def event_filter(request):
-    await request.app['security'].raise_permission(request, permission=None)
+    await raise_permission(request, permission=None)
     item_id = request.match_info["item_id"]
     cursor = get_db().conn.cursor()
     cursor.execute('''SELECT events.*, valves.name
