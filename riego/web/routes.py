@@ -8,7 +8,6 @@ from riego.web.views.system import setup_routes_system
 from riego.web.views.users import setup_routes_users
 
 
-
 def setup_routes(app=None, options=None):
     dashboard = Dashboard(app)
 
@@ -28,4 +27,3 @@ def setup_routes(app=None, options=None):
     setup_routes_system(app)
 
     setup_routes_users(app)
-    
