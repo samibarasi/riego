@@ -22,7 +22,9 @@ from riego.model.parameters import setup_parameters
 from riego.web.websockets import setup_websockets
 from riego.web.routes import setup_routes
 from riego.web.error_pages import setup_error_pages
-from riego.web.security import current_user_ctx_processor
+from riego.web.security import (
+    current_user_ctx_processor,
+    setup_security)
 
 
 from aiohttp import web
@@ -96,13 +98,15 @@ async def run_app(options=None):
     setup_timer(app=app, options=options, db=db,
                 mqtt=mqtt, valves=valves, parameters=parameters)
     setup_cloud(app=app, parameters=parameters, options=options)
-    
+
     mcache = aiomcache.Client(options.memcached_host, options.memcached_port)
     session_setup(app, MemcachedStorage(mcache))
 
     async def mcache_shutdown(app):
         await mcache.close()
     app.on_shutdown.append(mcache_shutdown)
+
+    app['security'] = setup_security(app, db=db)
 
     loader = jinja2.FileSystemLoader(options.http_server_template_dir)
     aiohttp_jinja2.setup(app,
