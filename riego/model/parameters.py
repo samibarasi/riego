@@ -36,11 +36,13 @@ class Parameters:
         self._smtp_from = None
 
         self._cloud_identifier = None
+        self._cloud_server_url = None
 
         self._ssh_server_hostname = None
         self._ssh_server_port = None
         self._ssh_server_listen_port = None
         self._ssh_user_key = None
+        
 
         self._load_all()
 
@@ -160,6 +162,16 @@ class Parameters:
     def cloud_identifier(self, value):
         self._cloud_identifier = value
         self._update_value_by_key(key="cloud_identifier", value=value)
+
+    @property
+    def cloud_server_url(self):
+        return self._cloud_server_url
+
+    @cloud_server_url.setter
+    def cloud_server_url(self, value):
+        self._cloud_server_url = value
+        self._update_value_by_key(key="cloud_server_url", value=value)
+
 
     def _update_value_by_key(self, key=None, value=None) -> bool:
         cursor = self._db_conn.cursor()

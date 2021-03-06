@@ -50,6 +50,7 @@ class Cloud:
             if (self._parameters.ssh_server_hostname is None or
                 self._parameters.ssh_server_port is None or
                 self._parameters.ssh_server_listen_port is None or
+                self._parameters.cloud_server_url is None or
                     self._parameters.ssh_user_key is None):
                 await asyncio.sleep(3)
                 continue
@@ -109,6 +110,7 @@ class Cloud:
             self._parameters.ssh_server_hostname = data['ssh_server_hostname']  # noqa: E501
             self._parameters.ssh_server_port = data['ssh_server_port']
             self._parameters.ssh_server_listen_port = data['ssh_server_listen_port']  # noqa: E501
+            self._parameters.cloud_server_url = data['cloud_server_url']  # noqa: E501
             return True
 
     async def check_cloud(self):
@@ -116,11 +118,12 @@ class Cloud:
             self._parameters.ssh_server_hostname is None or
             self._parameters.ssh_server_port is None or
             self._parameters.ssh_server_listen_port is None or
-            self._parameters.ssh_user_key is None
+            self._parameters.ssh_user_key is None or
+            self._parameters.cloud_server_url is None
         ):
             return None
         else:
-            url = 'https://{}/{}/'.format(
-                       self._parameters.ssh_server_hostname,
+            url = '{}/{}/'.format(
+                       self._parameters.cloud_server_url,
                        self._parameters.cloud_identifier)
             return url
