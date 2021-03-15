@@ -62,7 +62,8 @@ class Cloud:
                         port=self._parameters.ssh_server_port,
                         username=self._parameters.cloud_identifier,
                         client_keys=ssh_user_key,
-                        known_hosts=self._options.ssh_known_hosts
+                        known_hosts=self._options.ssh_known_hosts,
+                        keepalive_interval=60
                 ) as self._conn:
                     self._listener = await self._conn.forward_remote_port(
                         'localhost',  # Bind to localhost on remote Server
