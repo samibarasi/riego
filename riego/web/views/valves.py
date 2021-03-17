@@ -21,7 +21,11 @@ def setup_routes_valves(app):
 async def index(request: web.Request) -> Dict[str, Any]:
     await raise_permission(request, permission="")
     cursor = get_db().conn.cursor()
-    cursor.execute('SELECT * FROM valves')
+    cursor.execute('''SELECT valves.*,
+                        boxes.name AS box_name,
+                        boxes.topic AS box_topic
+                        FROM valves, boxes
+                        WHERE valves.box_id = boxes.id''')
     items = cursor.fetchall()
     get_db().conn.commit()
     return {"items": items}
@@ -79,7 +83,11 @@ async def edit(request: web.Request) -> Dict[str, Any]:
     await raise_permission(request, permission="")
     item_id = request.match_info["item_id"]
     cursor = get_db().conn.cursor()
-    cursor.execute('SELECT * FROM valves WHERE id=?', (item_id,))
+    cursor.execute('''SELECT valves.*,
+                boxes.name AS box_name,
+                boxes.topic AS box_topic
+                FROM valves, boxes
+                WHERE valves.box_id = boxes.id AND valves.id=?''', (item_id,))
     item = cursor.fetchone()
     get_db().conn.commit()
     if item is None:

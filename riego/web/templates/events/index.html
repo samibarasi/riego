@@ -9,57 +9,56 @@
 
 <table class="table">
     <thead>
-      <tr>
-        <th scope="col">Datum</th>
-        <th scope="col">Dauer</th>
-        <th scope="col">Kreis</th>
-      </tr>
+        <tr>
+            <th scope="col">Datum</th>
+            <th scope="col">Dauer</th>
+            <th scope="col">Kreis</th>
+        </tr>
     </thead>
     <tbody>
-    {% for item in items %}
-      <tr>
-        <td>{{ item.created_at }}</td>
-        <td>{{ item.duration }}</td>
-        <td>{{ item.name }}</td>
-      </tr>
-    {% endfor %}
+        {% for item in items %}
+        <tr>
+            <td>{{ item.created_at }}</td>
+            <td>{{ item.duration }}</td>
+            <td>{{ item.name }}</td>
+        </tr>
+        {% endfor %}
     </tbody>
-    </table>
+</table>
 
 
 
 
-    <script>
-        var ws = null;
-        function start (){
-            var wsUri = (window.location.protocol == 'https:' && 'wss://' || 'ws://') + window.location.host + "{{url('websockets')}}";
-            ws = new WebSocket(wsUri);
-            ws.onmessage = function (event) {
-                data = JSON.parse(event.data);
-                if (data.scope != 'events') {
-                    return
-                }
-                switch (data.action) {
-                    case 'reload':
-                        location.reload(true);
-                        break;
-                    default:
-                        break;
-                }
-            };
-            ws.onclose = function(){
-                //reconnect now
-                check();
-            };
+<script>
+    var ws = null;
+    function start() {
+        var wsUri = (window.location.protocol == 'https:' && 'wss://' || 'ws://') + window.location.host + "{{url('websockets')}}";
+        ws = new WebSocket(wsUri);
+        ws.onmessage = function (event) {
+            data = JSON.parse(event.data);
+            if (data.scope != 'events') {
+                return
+            }
+            switch (data.action) {
+                case 'reload':
+                    location.reload(true);
+                    break;
+                default:
+                    break;
+            }
         };
-        function check(){
-            if(!ws || ws.readyState == 3) start();
-        }
-        start();
-        setInterval(check, 5000);
-    
-    </script>
+        ws.onclose = function () {
+            //reconnect now
+            check();
+        };
+    };
+    function check() {
+        if (!ws || ws.readyState == 3) start();
+    }
+    start();
+    setInterval(check, 5000);
+
+</script>
 
 
 {% endblock %}
-

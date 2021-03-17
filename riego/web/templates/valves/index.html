@@ -5,17 +5,31 @@
 
 
 {% block content %}
-<h1>Items</h1>
-<p>
-  <ul>
-    {% for item in items %}
-    <li>
-      <a href="{{url('valves_item_view', item_id=item['id']) }}">{{ item['name'] }}</a> {{ item['topic'] }} {{ item['box_name'] }} {{ item['channel_nr']}}
-    </li>
-    {% endfor %}
-  </ul>
-</p>
-<hr>
+<h1>Valves</h1>
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Box</th>
+            <th scope="col">channel_nr</th>
+            <th scope="col">is_enabled</th>
+            <th scope="col">is_hidden</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        <tr>
+            <td><a href="{{url('valves_item_view', item_id=item['id']) }}">{{ item['name'] }}</a></td>
+            <td>{{ item['box_name'] }} </td>
+            <td>{{ item['channel_nr']}}</td>
+            <td>{{ item['is_enabled']}}</td>
+            <td>{{ item['is_hidden']}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
 <p>
   <a href="{{url('valves_new')}}">New</a> 
 </p>
