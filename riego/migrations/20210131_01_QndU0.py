@@ -68,7 +68,7 @@ steps = [
     "last_run"	    timestamp DEFAULT '1970-01-01 00:00:00',
 	"is_running"	INTEGER DEFAULT 0,
 	"is_enabled"	INTEGER DEFAULT 0,
-	"is_hidden"	    INTEGER DEFAULT 1,
+	"is_hidden"	    INTEGER DEFAULT 0,
 	"prio"	        INTEGER DEFAULT 9,
 	"box_id"	    INTEGER NOT NULL REFERENCES "boxes"("id") ON DELETE CASCADE,
 	"created_at"	timestamp DEFAULT CURRENT_TIMESTAMP,
