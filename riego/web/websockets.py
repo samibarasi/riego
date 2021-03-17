@@ -125,6 +125,7 @@ class Websockets():
             await callback_func(msg)
         except Exception as e:
             _log.error(f'Exeption in {callback_func}: {e}')
+            await asyncio.sleep(3)
             return False
         return True
 
