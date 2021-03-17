@@ -71,9 +71,12 @@ class Websockets():
                 if msg.type == web.WSMsgType.TEXT:
                     await self._dispatch_message(msg.data)
                 else:
+                    _log.error(f'Unknown message type: {msg}')
+                    await asyncio.sleep(3)
                     break
         except Exception as e:
             _log.error(f'Exeption in _dispatch_message: {e}')
+            await asyncio.sleep(3)
         finally:
             _log.debug(f'Removing closed websocket: {ws}')
             self._ws_list.remove(ws)
