@@ -17,7 +17,9 @@ def setup_routes_events(app):
 async def event_index(request):
     await raise_permission(request, permission=None)
     cursor = get_db().conn.cursor()
-    cursor.execute('''SELECT events.*, valves.name
+    cursor.execute('''SELECT events.*,
+                valves.name,
+                valves.duration AS vales_duration
                 FROM events, valves
                 WHERE events.valve_id = valves.id
                 ORDER BY events.created_at DESC''')

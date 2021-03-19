@@ -19,7 +19,7 @@
         {% for item in items %}
         <tr>
             <td>{{ item.created_at }}</td>
-            <td>{{ item.duration }}</td>
+            <td>{{ item.duration }} / {{ item.valves_duration }}</td>
             <td>{{ item.name }}</td>
         </tr>
         {% endfor %}
