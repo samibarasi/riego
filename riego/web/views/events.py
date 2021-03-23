@@ -19,7 +19,7 @@ async def event_index(request):
     cursor = get_db().conn.cursor()
     cursor.execute('''SELECT events.*,
                 valves.name,
-                valves.duration AS vales_duration
+                valves.duration AS valves_duration
                 FROM events, valves
                 WHERE events.valve_id = valves.id
                 ORDER BY events.created_at DESC''')
