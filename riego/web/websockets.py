@@ -75,8 +75,7 @@ class Websockets():
                     await asyncio.sleep(3)
                     break
         except Exception as e:
-            _log.error(f'Exeption in _dispatch_message: {e}')
-            _log.error(f'Message was: {msg}')
+            _log.error(f'Exeption while reading from websocket: {e}')
             await asyncio.sleep(3)
         finally:
             _log.debug(f'Removing closed websocket: {ws}')
