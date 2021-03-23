@@ -121,7 +121,7 @@ class Boxes():
                              f'{box_topic}, Power {channel_nr}')
                         )
                 except IntegrityError:
-                    # _log.debug(f'unable to Update MQTT STATE:{e}')
+                    # _log.debug(f'Valves already inserted{e}')
                     pass
         return True
 
