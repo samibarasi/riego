@@ -6,7 +6,6 @@ ssh/*
 
 /PRIVATE.txt
 /CHANGELOG.md
-/requirements_dev.txt
 /riego.conf
 /tt.py
 /upload.bat

@@ -1,0 +1,24 @@
+gmqtt
+ConfigArgParse
+yoyo-migrations
+aiohttp
+aiohttp_jinja2
+jinja2
+uvloop; sys_platform == "linux"
+cchardet
+aiohttp_debugtoolbar
+aiohttp_session[secure]
+aiohttp_remotes
+bcrypt
+asyncssh
+aiosmtplib
+
+
+pylint
+autopep8
+flake8
+setuptools
+wheel
+twine
+bump2version
+;python-semantic-release
