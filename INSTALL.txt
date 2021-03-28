@@ -51,12 +51,24 @@ py -3 -m venv .venv
 .venv\scripts\activate
 pip install pylint
 pip install pep8
-pip install -r requirements
+pip install -r requirements_dev.txt
+
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+
+
+
+VSC-Mac-Development:
+
+python3 -m venv .venv
+source .venv/bin/activate
+pip install pylint
+pip install pep8
+
 
 
 code .
 
-Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+
 
 
 
