@@ -22,7 +22,7 @@ setuptools.setup(
         'aiohttp',
         'aiohttp_jinja2',
         'jinja2',
-        'uvloop; sys_platform == "linux"',
+        'uvloop; sys_platform != "win32"',
         'cchardet',
         'aiohttp_debugtoolbar',
         'aiohttp_session[aiomcache]',

@@ -1,7 +1,6 @@
 import asyncio
 import configargparse
 import pkg_resources
-import os
 import sys
 from pathlib import Path
 import socket
@@ -60,7 +59,7 @@ def main():
     if sys.version_info >= (3, 8) and options.WindowsSelectorEventLoopPolicy:
         asyncio.DefaultEventLoopPolicy = asyncio.WindowsSelectorEventLoopPolicy  # noqa: E501
 
-    if os.name == "posix":
+    if sys.platform != "win32":
         import uvloop  # pylint: disable=import-error
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
