@@ -47,8 +47,8 @@ class Mqtt:
 
     async def _startup(self, app) -> None:
         _log.debug('MQTT Engine startup called')
-        await self.client.connect(self._options.mqtt_host,
-                                  port=self._options.mqtt_port,
+        await self.client.connect(self._options.mqtt_broker_host,
+                                  port=self._options.mqtt_broker_port,
                                   keepalive=10,
                                   version=MQTTv311)
         return None
@@ -107,8 +107,8 @@ class Mqtt:
 class Options():
 
     def __init__(self):
-        self.mqtt_host = "192.168.88.229"
-        self.mqtt_port = 1883
+        self.mqtt_broker_host = "192.168.88.229"
+        self.mqtt_broker_port = 1883
         self.mqtt_client_id = "testing"
 
 

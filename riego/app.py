@@ -254,10 +254,10 @@ def _get_options():
 # Directories
     p.add('--base_dir', help='Change only if you know what you are doing',
           default=Path(__file__).parent)
-# MQTT
-    p.add('-m', '--mqtt_host', help='IP adress of mqtt host',
+# MQTT-Broker
+    p.add('-m', '--mqtt_broker_host', help='IP adress of MQTT-Broker Host',
           default='127.0.0.1')
-    p.add('-p', '--mqtt_port', help='Port of mqtt service',
+    p.add('-p', '--mqtt_broker_port', help='Port of MQTT-Broker Host',
           default=1883, type=int)
     p.add('--mqtt_client_id', help='Client ID for MQTT-Connection',
           default=f'riego_ctrl_{socket.gethostname()}')
