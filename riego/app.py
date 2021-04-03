@@ -206,9 +206,9 @@ def _get_options():
     p.add('-l', '--log_file', help='Full path to logfile',
           default='log/riego.log')
     p.add('--log_max_bytes', help='Maximum Evet Log Size in bytes',
-          default=1024*300, type=int)
+          default=1024*512, type=int)
     p.add('--log_backup_count', help='How many files to rotate',
-          default=3, type=int)
+          default=20, type=int)
 # Secrets & Scurity
     p.add('--max_age_remember_me', type=int, default=7776000)
     p.add('--cookie_name_remember_me', default="remember_me")
