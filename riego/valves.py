@@ -121,7 +121,7 @@ class Valves():
     async def set_on_try(self, valve_id) -> None:
         cursor = self._db_conn.cursor()
         cursor.execute('''UPDATE valves SET is_running = ?
-                        WHERE id = ?''',(-1, valve_id))
+                        WHERE id = ?''', (-1, valve_id))
         self._db_conn.commit()
         if cursor.rowcount < 1:
             _log.error("Unable to update")
@@ -129,7 +129,7 @@ class Valves():
         cursor.execute("""SELECT valves.*, boxes.topic AS box_topic
                     FROM valves, boxes
                     WHERE valves.box_id = boxes.id AND valves.id=?""",
-                  (valve_id,))
+                       (valve_id,))
         valve = cursor.fetchone()
         if valve is None:
             _log.error("Valve not found 001")
@@ -144,7 +144,7 @@ class Valves():
 
     async def set_off_try(self, valve_id) -> None:
         cursor = self._db_conn.cursor()
-        cursor.execute('''UPDATE valves SET 
+        cursor.execute('''UPDATE valves SET
                         is_running = ?
                         WHERE id = ?''', (-1, valve_id))
         self._db_conn.commit()
@@ -154,7 +154,7 @@ class Valves():
         cursor.execute("""SELECT valves.*, boxes.topic AS box_topic
                     FROM valves, boxes
                     WHERE valves.box_id = boxes.id AND valves.id=?""",
-                  (valve_id,))
+                       (valve_id,))
         valve = cursor.fetchone()
         if valve is None:
             _log.error("Valve not found 001a")
@@ -211,7 +211,7 @@ class Valves():
         if valve is None:
             _log.error("Valve not found 003")
             return None
-        cursor.execute('''UPDATE valves SET 
+        cursor.execute('''UPDATE valves SET
                         is_running = ?
                         WHERE id = ?''', (0, valve['id']))
         self._db_conn.commit()
@@ -260,7 +260,7 @@ class Valves():
         cursor.execute(sql, (value, valve_id))
         self._db_conn.commit()
         if cursor.rowcount < 1:
-            _log.error(f'Unable to update: {e}')
+            _log.error('Unable to update')
             ret = False
         print(f'valve_id={valve_id}, key={key}, value={value}')
         await self._send_status_ws(valve_id=valve_id, key=key, value=value)

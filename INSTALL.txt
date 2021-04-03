@@ -4,7 +4,7 @@ vorbereitungen unter debian
  ./reboot-to-writable-mode.sh
 apt install python3-pip python3-venv memcached
 
-
+########################
 MQTT-Broker Mosquitto
 
 wget -O - http://repo.mosquitto.org/debian/mosquitto-repo.gpg.key | apt-key add -
@@ -12,7 +12,7 @@ wget -O - http://repo.mosquitto.org/debian/mosquitto-repo.gpg.key | apt-key add 
 wget -O /etc/apt/sources.list.d/mosquitto-buster.list http://repo.mosquitto.org/debian/mosquitto-buster.list
 
 sudo apt update 
-sudo apt install -y mosquitto mosquitto-clients avahi-daemon
+sudo apt install -y mosquitto mosquitto-clients
 
 sudo bash -c "cat > /etc/mosquitto/mosquitto.conf" <<'EOT'
 pid_file /var/run/mosquitto.pid
@@ -27,6 +27,25 @@ cp -a /var/lib/mosquitto /mnt/usb1/
 
 sudo systemctl enable mosquitto.service
 sudo systemctl restart mosquitto.service
+
+##############################
+mDNS Discovery für MQTT
+
+sudo apt install -y avahi-daemon
+sudo bash -c "cat > /etc/avahi/services/mqtt.service" <<'EOT'
+<?xml version="1.0" standalone='no'?>
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+<service-group>
+ <name replace-wildcards="yes">MQTT on %h</name>
+  <service>
+   <type>_mqtt._tcp</type>
+   <port>1883</port>
+  </service>
+</service-group>
+EOT
+
+sudo systemctl enable avahi-daemon
+sudo systemctl restart avahi-daemo
 
 adduser --system --group --home /mnt/usb1/riego --shell /bin/bash riego
 echo "source .venv/bin/activate" >/mnt/usb1/riego/.profile
