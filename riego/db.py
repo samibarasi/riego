@@ -1,6 +1,7 @@
 import sqlite3
 import json
 import asyncio
+import datetime
 from pathlib import Path
 from yoyo import read_migrations
 from yoyo import get_backend
@@ -16,6 +17,24 @@ _instance = None
 def get_db():
     global _instance
     return _instance
+
+
+def transformValue(value):
+    # transform date to string
+    if isinstance(value, datetime.datetime):
+        value = value.strftime("%d.%m.%y %H:%M:%S")
+    return value
+
+def query_db(query, args=(), one=False):
+    cur = get_db().conn.cursor()
+    cur.execute(query, args)
+    r = [dict((cur.description[i][0], transformValue(value)) for i, value in enumerate(row)) for row in cur.fetchall()]
+    # r = []
+    # for row in cur.fetchall():
+    #     for i, value in enumerate(row):
+    #         r.append(dict((cur.description[i][0], transformValue(value))))
+        
+    return (r[0] if r else None) if one else r
 
 
 def setup_db(options=None):
